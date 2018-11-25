@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >
+<generatorConfiguration>
+<!-- mybatis 代码生成器配置文件 -->
+<!--
+	推荐使用bin里面的ant脚本来实现自动化生成代码，使用方法是：
+	将mybatis-generator-core-1.3.2.jar放入ant的lib文件夹（platform/apache-ant-1.8.2/lib）中，
+	修改本配置文件，配置要生成代码的位置，数据库连接、数据库中表的名字等，执行bin下的genfiles.bat即可 
+-->
+<classPathEntry location="D:\webdev_E\demo\WebContent\WEB-INF\lib\mysql-connector-java-5.1.38.jar" />
+	<!-- 
+		配置代码生成相关联的环境: 数据库: 数据库连接+相关表, 要生成哪些文件? 生成文件存放的位置? 等等
+		id 用于唯一的标识一组对象的环境, 同一个配置文件中可以配置多个数据源,使用不同的生成器生成代码.
+	-->
+	<context id="appointmentInfo">
+	  	<plugin type="org.mybatis.generator.plugins.SerializablePlugin" />
+      	<plugin type="org.mybatis.generator.plugins.EqualsHashCodePlugin" />
+      	<plugin type="org.mybatis.generator.plugins.ToStringPlugin" />
+      	
+      	<!-- 生成的代码是否需要注释 -->
+		<!-- <commentGenerator> -->
+			<!-- <property name="suppressAllComments" value="true" /> -->
+			<!-- <property name="suppressDate" value="true"/> -->
+		<!-- </commentGenerator> -->
+		
+		<!-- 数据库连接, 四要素: 驱动名, URL, 用户名, 密码 -->
+		<jdbcConnection 
+			driverClass="com.mysql.jdbc.Driver" 
+			connectionURL="jdbc:mysql://10.137.46.86:3306/wechat_v1"
+			userId="ftb"
+			password="ftb"
+		/>
+
+		<javaModelGenerator targetPackage="com.demo.bussiness.mybatisLocal.bean"
+			targetProject="../src">
+			<property name="enableSubPackages" value="false" />
+			<property name="trimStrings" value="true" />
+		</javaModelGenerator>
+
+		<sqlMapGenerator targetPackage="com.demo.bussiness.mybatisLocal.mapper"
+			targetProject="../src">
+			<property name="enableSubPackages" value="false" />
+		</sqlMapGenerator>
+		
+		<javaClientGenerator targetPackage="com.demo.bussiness.mybatisLocal.dao"
+			targetProject="../src" type="XMLMAPPER">
+			<property name="enableSubPackages" value="false" />
+		</javaClientGenerator>
+		
+		
+		<table tableName="city" enableCountByExample="false"
+			enableDeleteByExample="false" enableSelectByExample="false"
+			enableUpdateByExample="false" selectByExampleQueryId="false">
+		</table>
+	</context>
+</generatorConfiguration>

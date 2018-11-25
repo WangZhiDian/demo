@@ -1,0 +1,12 @@
+2017-07-03 15:23:17.042 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在
+2017-07-03 15:24:23.712 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在
+2017-07-03 15:25:45.793 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在
+2017-07-03 15:26:55.092 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在
+2017-07-03 15:27:08.505 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在
+2017-07-03 15:27:53.001 [main] DEBUG com.demo.common.util.Function.PropertiesUtil -
+				读取属性文件--->失败！- 原因：文件路径错误或者文件不存在

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.demo.service.wapBind.dao.WapBindMapper" >
+
+  <select id="selectByWapBindInfo" parameterType="java.lang.String" resultType="java.lang.String">
+  	SELECT open_id from XXX where open_id = #{wapOpenid, jdbcType=VARCHAR} and customer_phone = #{customer_phone, jdbcType=VARCHAR}
+  </select>
+  
+  <update id="updateProposalByOpenid" parameterType="java.lang.String" >
+     	update XXX set openid = #{realOpenid, jdbcType=VARCHAR} where openid = #{wapOpenid, jdbcType=VARCHAR} and suit_id = #{suitId, jdbcType=VARCHAR}
+  </update>
+  
+  <update id="updatePolicyByOpenid" parameterType="java.lang.String" >
+   		update XXX set openid = #{realOpenid, jdbcType=VARCHAR} where proposal_id in
+			( SELECT proposal_id from XXX where openid = #{wapOpenid, jdbcType=VARCHAR} and suit_id = #{suitId, jdbcType=VARCHAR} )
+  </update>
+  
+  <select id="selectPolicyIdByTradeId" parameterType="java.lang.String" resultType="java.lang.String" >
+  		SELECT policy_id from XXX where trade_id = #{tradeId, jdbcType=VARCHAR};
+  </select>
+</mapper>

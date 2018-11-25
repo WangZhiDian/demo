@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<comment>test</comment>
+<!--
+	<entry key="SampleSyncBatch.initCorePoolSize">10</entry>
+	<entry key="SampleSyncBatch.crontabRegex">1,5,50,52,53,55 * * * *</entry>
+	<entry key="SampleSyncBatch.coreMaxSize">20</entry>
+	<entry key="SampleSyncBatch.readInterval">500</entry>
+	<entry key="SampleSyncBatch.updateInterval">200</entry>
+	<entry key="SampleSyncBatch.jdbc_datasource">jdbc/InsureDB</entry>
+	<entry key="SampleSyncBatch.logback">config/logback.xml</entry>
+	<entry key="SampleSyncBatch.sqlInterval">8</entry>
+	
+	
+ 	<entry key="MemberDownloadBatchSys.initCorePoolSize">1</entry>
+	<entry key="MemberDownloadBatchSys.crontabRegex">*/10 * * * *</entry>
+	<entry key="MemberDownloadBatchSys.coreMaxSize">1</entry>
+	<entry key="MemberDownloadBatchSys.updateInterval">-1</entry>
+	<entry key="MemberDownloadBatchSys.logback">config/logback.xml</entry> -->
+	
+	<entry key="StringAsync.initCorePoolSize">1</entry>
+	<entry key="StringAsync.crontabRegex">* * * * *</entry>
+	<entry key="StringAsync.coreMaxSize">1</entry>
+	<entry key="StringAsync.updateInterval">7000</entry>
+	<entry key="StringAsync.logback">config/logback.xml</entry>
+	
+</properties>
+

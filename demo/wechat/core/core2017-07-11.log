@@ -1,0 +1,16 @@
+2017-07-11 16:09:14.171 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				模板 data\pdffop\pdfpath\template\PDFTest.html 未找到！
+2017-07-11 16:16:23.641 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				模板 data\pdffop\pdfpath\template\PDFTest.html 未找到！
+2017-07-11 16:24:58.463 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				模板 data\pdffop\pdfpath\template\PDFTest.html 未找到！
+2017-07-11 16:47:41.960 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				error: D:\webdev_E\demo\pdfPathconfig\xhtml2fo_yl.xsl (系统找不到指定的路径。)
+2017-07-11 16:54:26.193 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1499763266178
+2017-07-11 16:55:05.783 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1499763305782
+2017-07-11 16:58:17.355 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1499763497354
+2017-07-11 16:58:41.852 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1499763521851

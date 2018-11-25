@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+    <META HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+    <META HTTP-EQUIV="Expires" CONTENT="0">
+    <title>微信支付</title>
+    <script src="jquery-1.10.2.min.js"></script>
+    <script>
+    
+    function getWxParam()
+    {
+    	RequestPara = GetRequestPara();
+    	var appId = RequestPara['appId'];
+    	var timeStamp = RequestPara['timeStamp'];
+    	var nonceStr = RequestPara['nonceStr'];
+    	var prepayId = 'prepay_id=' + RequestPara['prepayId'];
+    	var signType = RequestPara['signType'];
+    	var paySign = RequestPara['paySign'];
+    	var payJournalId = RequestPara['payJournalId'];
+//        alert(appId + '|' + timeStamp + '|' + nonceStr + '|' + prepayId + '|' + paySign + "|" + payJournalId);
+
+        WeixinJSBridge.invoke(
+ 	   	          'getBrandWCPayRequest', {
+ 	   	           "appId":appId,     //公众号名称，由商户传入     
+ 	   	           "timeStamp":timeStamp, //时间戳，自1970年以来的秒数     
+ 	   	           "nonceStr":nonceStr, //随机串     
+ 	   	           "package":prepayId,
+ 	   	           "signType":"MD5",   //微信签名方式：     
+ 	   	           "paySign":paySign //微信签名 
+ 	   	       },
+ 	   	       function(res){
+ 	            if(res.err_msg == "get_brand_wcpay_request:ok" ) // 使用以上方式判断前端返回,微信团队郑重提示：res.err_msg将在用户支付成功后返回    ok，但并不保证它绝对可靠。
+ 	            {
+ 	                var successUrl = url + payJournalId + '?trade_status=TRADE_SUCCESS';
+//                    alert('location success:'+successUrl);
+ 	                window.location.replace(successUrl);
+ 	                event.returnvalue=false;
+ 	            }
+ 	            else
+ 	            {
+                    var failUrl = url + payJournalId + '?trade_status=TRADE_FAIL';
+//                    alert('location fail:'+failUrl);
+ 	                window.location.replace(failUrl);
+ 	                event.returnvalue=false;
+ 	            }
+ 	   	       }
+ 	   	   );
+    }
+
+    var url = location.origin + '/hera_payment/v1/payFrontCallback/JSAPI/';
+
+    document.addEventListener('WeixinJSBridgeReady', function(){
+        WeixinJSBridge.call('hideOptionMenu');
+        getWxParam();
+
+    },false);
+    
+    function GetRequestPara()
+    {
+    	var url = location.search;
+    	var Request = new Object(); 
+    	if(url.indexOf("?")!=-1)
+    	{ 
+    		var str = url.substr(1); 
+    		strs= str.split("&"); 
+    		for(var i=0;i < strs.length; i++)
+    		{ 
+    			Request[strs[i].split("=")[0]]=(strs[i].split("=")[1]); 
+    		} 
+    	}
+    	return Request;
+    }
+    
+    </script>
+</head>
+<body>
+	
+</body>
+</html>

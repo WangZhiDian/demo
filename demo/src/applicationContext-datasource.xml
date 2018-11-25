@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+	<!-- jdbc.propertis Directory E:/workspace/wechat_hera_v3/ -->
+	<context:property-placeholder location="classpath:application.properties"
+		ignore-unresolvable="true" />
+	
+	<bean id="dataSource" destroy-method="close"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="maxActive" value="50" />
+		<property name="initialSize" value="5" />
+		<property name="maxWait" value="600000" />
+		<property name="maxIdle" value="10" />
+		<property name="minIdle" value="5" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="300" />
+
+		<property name="minEvictableIdleTimeMillis" value="1800000" />
+		<property name="numTestsPerEvictionRun" value="3" />
+		<property name="testOnBorrow" value="true" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnReturn" value="true" />
+		<property name="validationQuery" value="SELECT 1" />
+		<property name="connectionProperties" value="clientEncoding=UTF-8" />
+	</bean>
+	<bean name="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 --> 
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 自动扫描mapping.xml文件 -->
+		<property name="mapperLocations" value="classpath:com/demo/**/**/mapper/*" />
+	</bean>
+	
+	<!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.demo.bussiness,com.demo.service" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+	
+	<!--通过模板定制mybatis的行为 -->
+	<!-- 批量模板 -->
+ 	<bean id="batchSqlSessionTemplate" class="com.demo.common.mybatis.BatchSqlSessionTemplate">
+		<constructor-arg ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- 异步模板 -->
+ 	<bean id="asyncSqlSessionTemplate" class="com.demo.common.mybatis.AsyncSqlSessionTemplate"
+		p:pooledDisruptorBatcher-ref="pooledDisruptorBatcher">
+		<constructor-arg ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- 注意，spring是按照顺序加载的，所以第三个普通的MapperScannerConfigurer一定不能放到前面，否则其他两个会不起作用 -->
+<!--  	<bean class="com.demo.common.mybatis.TKMapperScannerConfigurer">
+		<property name="basePackage" value="com.demo" />
+		<property name="sqlSessionTemplateBeanName" value="batchSqlSessionTemplate" />
+		加入该注解会进行批量存改
+		<property name="annotationClass" value="com.demo.common.mybatis.BatchAnnotation" />
+	</bean>
+ 	<bean class="com.demo.common.mybatis.TKMapperScannerConfigurer">
+		<property name="basePackage" value="cn.tk.hera" />
+		<property name="sqlSessionTemplateBeanName" value="asyncSqlSessionTemplate" />
+		加入该注解会进行异步化存改
+		<property name="annotationClass" value="com.demo.common.mybatis.AsyncAnnotation" />
+	</bean>
+ 	<bean class="com.demo.common.mybatis.TKMapperScannerConfigurer">
+		<property name="basePackage" value="cn.tk.hera" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean> -->
+
+	<!-- <tx:advice id="userTxAdvice" transaction-manager="transactionManager"> 
+		<tx:attributes> 查 <tx:method name="find*" read-only="true" propagation="NOT_SUPPORTED" 
+		/> 增删改 <tx:method name="save*" rollback-for="Exception" /> </tx:attributes> 
+		</tx:advice> <aop:config proxy-target-class="true"> <aop:pointcut id="serviceMethod" 
+		expression="execution(* cn.tk.wechat.service.*.*(..))" /> <aop:advisor advice-ref="userTxAdvice" 
+		pointcut-ref="serviceMethod" /> </aop:config> -->
+</beans>

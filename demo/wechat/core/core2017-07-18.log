@@ -1,0 +1,54 @@
+2017-07-18 14:37:08.721 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500359828720
+2017-07-18 14:40:11.950 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500360011949
+2017-07-18 14:45:58.765 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500360358764
+2017-07-18 14:46:39.390 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500360399389
+2017-07-18 15:22:56.056 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500362576056
+2017-07-18 15:30:48.139 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500363048138
+2017-07-18 15:36:20.707 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500363380706
+2017-07-18 15:36:32.169 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-start: 1500363392169
+2017-07-18 15:36:35.883 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-end: 1500363395883
+2017-07-18 15:36:40.009 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-close: 1500363400009
+2017-07-18 15:36:41.337 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-start: 1500363401337
+2017-07-18 15:36:42.154 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-end: 1500363402154
+2017-07-18 15:37:55.145 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500363475145
+2017-07-18 15:41:29.998 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-start: 1500363689998
+2017-07-18 15:41:30.437 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-end: 1500363690437
+2017-07-18 15:41:30.437 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-close: 1500363690437
+2017-07-18 15:41:30.437 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-start: 1500363690437
+2017-07-18 15:41:30.437 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-end: 1500363690437
+2017-07-18 15:42:23.681 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500363743680
+2017-07-18 15:42:24.847 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-start: 1500363744847
+2017-07-18 15:42:25.250 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-end: 1500363745250
+2017-07-18 15:42:25.250 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-close: 1500363745250
+2017-07-18 15:42:25.250 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-start: 1500363745250
+2017-07-18 15:42:25.250 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				pdf2byte-end: 1500363745250
+2017-07-18 15:44:54.315 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-init-start: 1500363894314
+2017-07-18 15:45:12.944 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf-transformer-start: 1500363912944
+2017-07-18 15:45:20.705 [main] DEBUG com.demo.common.util.Function.HtmlToPdfUtil -
+				fop2pdf Exception: org.apache.fop.fo.ValidationException: Error: First element must be the fo:root formatting object. Found (Namespace URI: "", Local Name: "table") instead. Please make sure you're producing a valid XSL-FO document.

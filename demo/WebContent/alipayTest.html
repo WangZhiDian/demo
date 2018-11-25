@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+    <META HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+    <META HTTP-EQUIV="Expires" CONTENT="0">
+    <title>ALIPAY支付</title>
+    <script src="jquery-1.10.2.min.js"></script>
+    <script>
+    window.onload = function()
+    {
+    	RequestPara = GetRequestPara();
+    	var paywayid = RequestPara['paywayid'];
+    	var tenantid = RequestPara['tenantid'];
+    	var body = RequestPara['body'];
+    	var amount = RequestPara['amount'];
+        var tradeNo = RequestPara['tradeNo'];
+
+    	getAliPayTest(paywayid, tenantid, body, amount, tradeNo);
+    }
+    
+    function getAliPayTest(paywayid, tenantid, body, amount, tradeNo){
+
+//        var tradeNum = '0-11111-11010-' + generateMixed(6);
+        var tradeNum = tradeNo;
+        alert("tradeNo:" + tradeNum);
+        $.ajax({
+            type:'GET',
+            url:'http://ecuat.tk.cn/hera_payment_wechat/v1/prepay2/testALiPay?tradeNo='+tradeNum+'&paywayid='+paywayid+'&tenantid='+tenantid+'&body='+body+'&amount='+amount,
+            data:{
+                tradeNo:tradeNum
+            },
+            async:false,
+            cache: false,
+            dataType:'text',
+            success: function (data) {
+                console.info(data);
+                alert(data);
+                location.href = data;
+                //$("body").html(data);
+            },
+     	   error: function(){
+     			 //请求出错处理
+     				alert('系统繁忙，请重试！');
+     		   }
+        });
+
+    }
+    
+    var successUrl = 'http://m.tk.cn/service/weixinbind/identityBinding.html';
+    var failUrl = 'http://m.tk.cn/service/weixinbind/identityBinding.html';
+    
+    var chars = ['0','1','2','3','4','5','6','7','8','9'];
+
+    function generateMixed(n) {
+         var res = "";
+         for(var i = 0; i < n ; i ++) {
+             var id = Math.ceil(Math.random()*9);
+             res += chars[id];
+         }
+         return res;
+    }
+    
+    function GetRequestPara()
+    {
+    	var url = location.search;
+    	var Request = new Object(); 
+    	if(url.indexOf("?")!=-1)
+    	{ 
+    		var str = url.substr(1); 
+    		strs= str.split("&"); 
+    		for(var i=0;i < strs.length; i++)
+    		{ 
+    			Request[strs[i].split("=")[0]]=(strs[i].split("=")[1]); 
+    		} 
+    	}
+    	return Request;
+    }
+    
+    </script>
+</head>
+<body>
+	
+</body>
+</html>
