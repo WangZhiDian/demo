@@ -1,0 +1,38 @@
+1 linux第一次安装好了以后重置root用户的密码： password即为密码
+set password for 'root'@'localhost' =password('password');
+
+2 查看mysql运行端口：
+ mysql> show global variables like 'port';
+
+3 修改mysql运行端口：
+3.1、编辑/etc/my.cnf文件  [root@localhost ~]# vi /etc/my.cnf
+3.2、添加port=2032;
+3.3、重启mysql [root@localhost ~]# /etc/init.d/mysqld restart
+
+4 mysqld 提示没有此命令：
+将suport_files 文件夹中的mysql.service文件拷贝到/etc/init.d/ 文件夹中，并改名为mysqld
+
+5 mysql 提示没有此命令：
+由于linux寻找库回到/usr/bin 文件夹下面去找，所以将解压后的mysql数据库的bin创建软连接, 这样就可以使用mysql命令了：
+ln -s /usr/local/mysql/bin/mysql /usr/bin
+
+6 授权数据库访问权限：
+//更新用户表
+mysql> UPDATE `user` SET `Host` = '113.128.*.*' where `Host` = '113.128.*.*';
+//授权用户表，若授权所有的ip，则@符号后面的ip用%表示
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'113.129.*.*' IDENTIFIED BY 'password' WITH GRANT OPTION;
+mysql> flush privileges;
+
+7 登陆某一天主机mysql： mysql -h hostip -u root -p   回车 然后输入密码
+
+
+
+搭建mysql_cluster过程中的流程和遇到的问题和解决问题的方法：
+1 从mysql的网站下载最新的mysql官方提供的mysql_cluster的jar包，用二进制包的形式安装，非rpm的形式安装；
+2 最简单的结构应该为 manager一台、放内存数据的db两台、mysql实例的机器两台，但为了简便，我将存放内存的db和mysql实例的
+机器融合成了一台机器；
+3 在配置manager配置的时候，最开始用了1台机器做实验，始终失败，但后来改用两台数据服务器后，就正常了，可能是与最小db设置
+为两台的参数有关；
+4 注意在安装过程中，设置的各种log的路劲问题；
+5 文件拷贝好后，需要启动manager、db、mysql实例，都启动起来之后才会跑起来；
+6 mysql_cluster实例还有很多命令，需要组合一起设置参数，比如内存大小，索引index大小，还没有研究。

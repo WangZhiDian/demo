@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.model.maven.dao.TenantinfoPaywayDao">
+
+    <!-- mybatis通用标签释义：
+         id :唯一的标识符.
+　　　 　parameterType:传给此语句的参数的全路径名或别名 例:com.test.poso.User或user
+　　　 　resultType :语句返回值类型或别名。注意，如果是集合，那么这里填写的是集合的泛型，而不是集合本身（resultType 与resultMap 不能并用）
+         resultMap：建立SQL查询结果字段与实体属性的映射关系信息，查询的结果集转换为java对象，方便进一步操作，将结果集中的列与java对象中的属性对应起来并将值填充进去
+         resultMap中的id：该resultMap的标志
+         resultMap中的type：返回值的类名，此例中返回EStudnet类
+         resultMap中的result：用于设置普通字段与领域模型属性的映射关系
+         resultMap中的子标签id：用于设置主键字段与领域模型属性的映射关系
+
+         if：标签通常用于WHERE语句中，通过判断参数值来决定是否使用某个查询条件， 他也经常用于UPDATE语句中判断是否更新某一个字段，还可以在INSERT语句中用来判断是否插入某个字段的值
+         foreach ：标签主要用于构建in条件，他可以在sql中对集合进行迭代，如下为例子：
+         <delete id="deleteBatch">
+        　　　　delete from user where id in
+        　　　　<foreach collection="array" item="id" index="index" open="(" close=")" separator=",">
+        　　　　　　#{id}
+        　　　　</foreach>
+        　　</delete>
+        　　我们假如说参数为  int[] ids = {1,2,3,4,5}  那么打印之后的SQL如下：
+        　　delete form user where id in (1,2,3,4,5)
+
+        collection ：collection属性的值有三个分别是list、array、map三种，必须指定，分别对应的参数类型为：List、数组、map集合，我在上面传的参数为数组，所以值为array
+　　　　item ： 表示在迭代过程中每一个元素的别名
+　　　　index ：表示在迭代过程中每次迭代到的位置（下标）
+　　　　open ：前缀
+　　　　close ：后缀
+　　　　separator ：分隔符，表示迭代时每个元素之间以什么分隔
+        我们通常可以将之用到批量删除、添加等操作中
+
+        choose :有时候我们并不想应用所有的条件，而只是想从多个选项中选择一个。MyBatis提供了choose 元素，按顺序判断when中的条件出否成立，如果有一个成立，则choose结束。当choose中所有when的条件都不满则时，
+                则执行 otherwise中的sql。类似于Java 的switch 语句，choose为switch，when为case，otherwise则为default。if是与(and)的关系，而choose是或（or）的关系。
+        where:当if标签较多时，这样的组合可能会导致错误,如果描述的条件有空的，可能出现where and之类的多余关键字，这时我们可以使用where动态语句来解决
+                这个“where”标签会知道如果它包含的标签中有返回值的话，它就插入一个‘where’。此外，如果标签返回的内容是以AND 或OR 开头的，则它会剔除掉。
+        set：当在update语句中使用if标签时，如果前面的if没有执行，则或导致逗号多余错误。使用set标签可以将动态的配置SET 关键字，和剔除追加到条件末尾的任何不相关的逗号。没有使用if标签时，如果有一个参数为null，都会导致错误。
+        trim：是更灵活的去处多余关键字的标签，他可以实践where和set的效果。
+        association：通常用来映射一对一的关系，但也有一对多的情况
+
+-->
+
+    <!--返回的对象定义-->
+    <resultMap type="TenantinfoPayway" id="tenantinfoPaywayResultMap">
+		<result property="relationshipId" column="RELATIONSHIP_ID" />
+		<result property="tenantId" column="TENANT_ID" />
+		<result property="paywayId" column="PAYWAY_ID" />
+		<result property="paywayContent" column="PAYWAY_CONTENT" />
+		<result property="paywayDescription" column="PAYWAY_DESCRIPTION" />
+		<result property="remark" column="REMARK" />
+		<result property="creator" column="CREATOR" />
+		<result property="createdTime" column="CREATED_TIME" />
+		<result property="modifier" column="MODIFIER" />
+		<result property="modifiedTime" column="MODIFIED_TIME" />
+	</resultMap>
+
+    <!-- 该定义，将association映射到bean中的对象里去,association-->
+    <resultMap id="tenantinfoUnionPaywayResultMap" type="TenantinfoPayway">
+        <result property="relationshipId" column="RELATIONSHIP_IP" />
+        <result property="tenantId" column="TENANT_ID" />
+        <result property="paywayId" column="PAYWAY_ID" />
+        <association property="payWayDomain" javaType="PayWayDomain">
+            <result property="paywayId" column="PAYWAY_ID"/>
+            <result property="displayName" column="DISPLAY_NAME"/>
+        </association>
+    </resultMap>
+
+    <!-- 该定义，将association映射到bean中的list对象集里面去,xml使用collection-->
+    <resultMap id="tenantinfoUnionPaywaySResultMap" type="TenantinfoPayway">
+        <result property="relationshipId" column="RELATIONSHIP_IP" />
+        <result property="tenantId" column="TENANT_ID" />
+        <result property="paywayId" column="PAYWAY_ID" />
+        <collection  property="payWayDomainList" javaType="ArrayList" ofType="PayWayDomain">
+            <result property="paywayId" column="PAYWAY_ID"/>
+            <result property="displayName" column="DISPLAY_NAME"/>
+        </collection >
+    </resultMap>
+
+    <!--select 中的参数模块定义-->
+	<sql id="table_columns">
+		RELATIONSHIP_ID,
+		TENANT_ID,
+		PAYWAY_ID,
+		PAYWAY_CONTENT,
+		PAYWAY_DESCRIPTION,
+		REMARK,
+		CREATOR,
+		CREATED_TIME,
+		MODIFIER,
+		MODIFIED_TIME
+    </sql>
+    <!--update 中的赋值模块定义-->
+	<sql id="entity_properties">
+		#{relationshipId},
+		#{tenantId},
+		#{paywayId},
+		#{paywayContent},
+		#{paywayDescription},
+		#{remark},
+		#{creator},
+		#{createdTime},
+		#{modifier},
+		#{modifiedTime}
+	</sql>
+
+    <!-- where条件中的模块定义， 使用like用法：columnName like concat('%',#columnName#,'%') -->
+    <sql id="page_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="tenantId != null and tenantId != ''">and TENANT_ID = #{tenantId}</if>
+            <if test="paywayId != null and paywayId != ''">and PAYWAY_ID = #{paywayId}</if>
+            <if test="paywayContent != null and paywayContent != ''">and PAYWAY_CONTENT = #{paywayContent}</if>
+            <if test="paywayDescription != null and paywayDescription != ''">and PAYWAY_DESCRIPTION = #{paywayDescription}</if>
+            <if test="remark != null and remark != ''">and REMARK = #{remark}</if>
+            <if test="creator != null and creator != ''">and CREATOR = #{creator}</if>
+            <if test="createdTime != null ">and CREATED_TIME = #{createdTime}</if>
+            <if test="modifier != null and modifier != ''">and MODIFIER = #{modifier}</if>
+            <if test="modifiedTime != null ">and MODIFIED_TIME = #{modifiedTime}</if>
+        </trim>
+    </sql>
+
+    <!--自定义sql示例=================================================================================================================================================================-->
+	<!--1 不使用任何参数，获取String类型返回 -->
+    <select id="getDesc" resultType="String">
+        select username from t_user t_user where username = 'wangdian'
+    </select>
+
+    <!--2 使用参数，获取String类型返回,返回值唯一 -->
+    <select id="getDescWithParam" resultType="String" parameterType="String" >
+        select t.payway_description from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--3 使用参数,带注解，获取String类型返回,返回值唯一，parameterType，#{}中参数与dao中方法的参数名相同 -->
+    <select id="getDescWithNoteParam" resultType="String" >
+        select t.payway_description from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--4 使用参数,参数为Map类型，获取String类型返回,返回值唯一，resultType为java.util.Map，#{}中参数与map中key的参数名相同 -->
+    <select id="getDescWithMapParam" parameterType="java.util.Map" resultType="String">
+        select t.payway_description from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--5 使用参数,参数为Object对象类型，获取String类型返回，#{}中参数与对象中的属性名相同 -->
+    <select id="getDescWithObjectParam" parameterType="TenantinfoPayway" resultType="String">
+        select t.payway_description from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--6 使用参数,参数为注解参数，获取String类型返回，#{}中参数与注解中的属性名相同 -->
+    <select id="getObjWithNoteparam" resultType="TenantinfoPayway">
+        select <include refid="table_columns" />
+        from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--7 使用参数,参数为对象参数，获取对象类型返回，sql中应用上述中定义好的代码片段table_columns，引用标签为include、refid；返回
+    类型为resultMap自定义对象，自定义对象引用id为tenantinfoPaywayResultMap-->
+    <select id="getObjWithObjparam"  resultMap="tenantinfoPaywayResultMap">
+        select <include refid="table_columns" />
+        from d_tenantinfo_payway
+        <include refid="page_where" />
+    </select>
+
+    <!--8 使用参数,参数为Object对象类型，获取对象返回，#{}中参数与对象中的属性名相同，对象为多个值，返回Map自定义引用 -->
+    <select id="getListObjWithObjparam" resultMap="tenantinfoPaywayResultMap">
+        select <include refid="table_columns" />
+        from d_tenantinfo_payway
+    </select>
+
+    <!--9 使用参数,参数为值，获取字符串返回，#{}中参数与参数中的参数名相同，返回字符串集的一个列表 -->
+    <select id="getListStringWithObjparam" resultType="String">
+        select t.payway_description
+        from d_tenantinfo_payway t where tenant_id=#{tenantId} and payway_id=#{paywayId}
+    </select>
+
+    <!--10 使用参数,获取数据量，返回类型为基本类型：整形 -->
+    <select id="getCountWithObjparam" resultType="int" >
+        select count(*) from d_tenantinfo_payway
+        <include refid="page_where" />
+    </select>
+
+    <!--11 更新表数据，根据对象中的某个特定字段，更新条件使用标签trim链接各个参数 -->
+    <update id="updateByPrimaryKey" parameterType="TenantinfoPayway">
+        update d_tenantinfo_payway
+        <trim prefix="set" suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">TENANT_ID = #{tenantId},</if>
+            <if test="paywayId != null and paywayId != ''">PAYWAY_ID = #{paywayId},</if>
+            <if test="paywayContent != null and paywayContent != ''">PAYWAY_CONTENT = #{paywayContent},</if>
+            <if test="paywayDescription != null and paywayDescription != ''">PAYWAY_DESCRIPTION = #{paywayDescription},</if>
+            <if test="remark != null and remark != ''">REMARK = #{remark},</if>
+            <if test="creator != null and creator != ''">CREATOR = #{creator},</if>
+            <if test="createdTime != null ">CREATED_TIME = #{createdTime},</if>
+            <if test="modifier != null and modifier != ''">MODIFIER = #{modifier},</if>
+            <if test="modifiedTime != null ">MODIFIED_TIME = #{modifiedTime},</if>
+        </trim>
+        <where>RELATIONSHIP_ID = #{relationshipId}</where>
+    </update>
+
+    <!--12 更新表数据，根据对象中的某个特定字段，更新条件使用标签trim链接各个参数，同时使用include引入where条件 -->
+    <update id="updateByPrimaryKeySelective" parameterType="TenantinfoPayway">
+        update d_tenantinfo_payway
+        <trim prefix="set" suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">TENANT_ID = #{tenantId},</if>
+            <if test="paywayId != null and paywayId != ''">PAYWAY_ID = #{paywayId},</if>
+            <if test="paywayContent != null and paywayContent != ''">PAYWAY_CONTENT = #{paywayContent},</if>
+            <if test="paywayDescription != null and paywayDescription != ''">PAYWAY_DESCRIPTION = #{paywayDescription},</if>
+            <if test="remark != null and remark != ''">REMARK = #{remark},</if>
+            <if test="creator != null and creator != ''">CREATOR = #{creator},</if>
+            <if test="createdTime != null ">CREATED_TIME = #{createdTime},</if>
+            <if test="modifier != null and modifier != ''">MODIFIER = #{modifier},</if>
+            <if test="modifiedTime != null ">MODIFIED_TIME = #{modifiedTime},</if>
+        </trim>
+        <include refid="page_where" />
+    </update>
+
+    <!--13 适用于主键自增类型，自增设置标签：useGeneratedKeys，自增健：keyProperty -->
+    <insert id="insert" parameterType="TenantinfoPayway" useGeneratedKeys="true" keyProperty="id">
+        insert into d_tenantinfo_payway( <include refid="table_columns" /> )
+        values ( <include refid="entity_properties" /> )
+    </insert>
+
+    <!--14 根据传入的参数插入，哪些值不为空的，就插入哪些值-->
+    <insert id="insertSelective" parameterType="TenantinfoPayway">
+        insert into d_tenantinfo_payway
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="relationshipId != null and relationshipId != ''">RELATIONSHIP_ID,</if>
+            <if test="tenantId != null and tenantId != ''">TENANT_ID,</if>
+            <if test="paywayId != null and paywayId != ''">PAYWAY_ID,</if>
+            <if test="paywayContent != null and paywayContent != ''">PAYWAY_CONTENT,</if>
+            <if test="paywayDescription != null and paywayDescription != ''">PAYWAY_DESCRIPTION,</if>
+            <if test="remark != null and remark != ''">REMARK,</if>
+            <if test="creator != null and creator != ''">CREATOR,</if>
+            <if test="createdTime != null ">CREATED_TIME,</if>
+            <if test="modifier != null and modifier != ''">MODIFIER,</if>
+            <if test="modifiedTime != null ">MODIFIED_TIME,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="relationshipId != null and relationshipId != ''">#{relationshipId},</if>
+            <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+            <if test="paywayId != null and paywayId != ''">#{paywayId},</if>
+            <if test="paywayContent != null and paywayContent != ''">#{paywayContent},</if>
+            <if test="paywayDescription != null and paywayDescription != ''">#{paywayDescription},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="creator != null and creator != ''">#{creator},</if>
+            <if test="createdTime != null ">#{createdTime},</if>
+            <if test="modifier != null and modifier != ''">#{modifier},</if>
+            <if test="modifiedTime != null ">#{modifiedTime},</if>
+        </trim>
+    </insert>
+
+    <!--15 根据某个具体的字段删除表记录-->
+    <delete id="deleteByPrimaryKey" parameterType="String">
+        delete from d_tenantinfo_payway
+        where RELATIONSHIP_ID = #{relationshipId}
+    </delete>
+
+    <!--16 根据对象中传的具体的值来删除表记录 -->
+    <delete id="delete" parameterType="TenantinfoPayway">
+        delete from d_tenantinfo_payway
+        <include refid="page_where" />
+    </delete>
+
+    <!--17 批量查询，查询一个列表数据,使用foreach标签 解析出来的sql类似：select XX form XX where id in (1,2,3,4,5)
+        sql 将会转换为： select t.payway_description from d_tenantinfo_payway t where RELATIONSHIP_ID in ( ? , ? , ? )  -->
+    <select id="getDescsWithParamList" parameterType="java.util.List" resultType="String">
+        select t.payway_description from d_tenantinfo_payway t where RELATIONSHIP_ID in
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 18 获取对象，对象里面的属性包含另一个对象，另一个对象为单个对象 -->
+    <select id="getUnionObjWithNoteparam" resultMap="tenantinfoUnionPaywayResultMap">
+            select d1.relationship_id, d1.tenant_id, d1.payway_id, d2.payway_id, d2.display_name
+            from d_tenantinfo_payway d1, d_payway d2
+            where d1.payway_id = #{paywayId} and d1.tenant_id = #{tenantId} and d1.payway_id = d2.payway_id
+    </select>
+
+    <!-- 19 获取对象，对象里面的属性包含另一个对象，另一个对象为单个对象 -->
+    <select id="getUnionObjListWithNoteparam" resultMap="tenantinfoUnionPaywaySResultMap">
+        select d1.relationship_id, d1.tenant_id, d1.payway_id, d2.payway_id, d2.display_name
+        from d_tenantinfo_payway d1, d_payway d2
+        where d1.payway_id = #{paywayId} and d1.tenant_id = #{tenantId} and d1.payway_id = d2.payway_id
+    </select>
+
+    <!--20 使用where标签过滤，该标签可以被trim标签等效替换 -->
+    <select id="getDescWithParamWhere" resultType="String">
+        select t.payway_description from d_tenantinfo_payway t
+        <where>
+            <if test="tenantId != null and tenantId != '' ">and tenant_id=#{tenantId}</if>
+            <if test="paywayId != null and paywayId != '' ">and payway_id=#{paywayId}</if>
+        </where>
+    </select>
+
+</mapper>

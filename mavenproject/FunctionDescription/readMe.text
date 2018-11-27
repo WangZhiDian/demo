@@ -1,0 +1,43 @@
+1 jersey  restful处理前端入口   applicationException处理全局异常
+2 spring mvc
+3 数据源在context配置，jndi调用
+4 mybatis spring jersey 整合
+5 lombok 注释字段
+6 mvn 多model组合工程方式
+7 log4j、logback  日志切割
+8 redis 缓存，链接guava组合成缓存操作工具类
+9 disruptor多线程处理工具类
+10 http直接外围接口调用， httpclient封装工具调用外围接口
+11 qrcode 二维码生成工具
+12 velocity 数据模板转化
+13 spring定时任务
+14 数据库读取数据分页
+15 nginx请求转发
+
+
+
+其他工具方法：
+1 生产UUID随机数:cn.model.maven.commons.id.*
+2 处理字符串工具类:cn.model.maven.commons.utils.StringUtil
+  继承StringUtil并扩展:cn.model.maven.commons.utils.StringHelper
+3 获取文件配置属性:cn.model.maven.commons.utils.PropertyConfigurer
+4 加密字符串:cn.model.maven.commons.utils.Md5Encrypt
+5 处理日期工具:cn.model.maven.commons.utils.DateUtil
+6 Base64编码处理工具：cn.model.maven.commons.utils.Base64Util
+7 生成二维码工具：cn.model.maven.commons.utils.qrcode.QrCodeService
+8 将json字符串转化为对象：cn.model.maven.commons.utils.JsonUtil
+  该工具支持转化json格式数据，支持转化xml格式数据
+9 校验json数据格式的jsonschema工具:cn.model.maven.commons.utils.JsonSchemaUtil
+10 处理模板velocity工具:cn.model.maven.commons.utils.velocity.impl.VelocityEngineServiceImpl
+11 处理证件号工具：cn.model.maven.commons.utils.IdcardUtils
+12 处理文本text工具：cn.model.maven.commons.utils.TextUtil
+13
+
+
+
+数字转汉字的圆角分:cn.model.maven.commons.utils.DigitToChange
+
+
+
+
+

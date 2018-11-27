@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<shard>	
+	<!-- redis节点配置开始 -->
+	<servernode>
+		<node>
+			<id>JedisPool</id>
+			<!-- 最大的活动连接 -->
+			<maxActive>200</maxActive>
+			<!-- 最大的空闲连接 -->
+			<maxIdle>100</maxIdle>
+			<!-- 最大的等待时间 -->
+			<maxWait>1000</maxWait>
+			<hosts>${redis.hosts}</hosts>
+		</node>
+	</servernode>
+	<!-- redis节点 配置结束 -->
+</shard>

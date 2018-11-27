@@ -1,0 +1,286 @@
+本文记录全局异常返回,过滤器,拦截器.
+
+一.全局异常处理器
+webservice定义全局返回错误码是很重要的一个功能,jersey正好就能实现这一功能.
+
+整个流程就是当jersey托管的类发现了异常,抛出给jersey的异常处理器,该异常处理器直接返回自定义的错误代码.
+
+1.定义异常代码
+可以使用枚举类,也可以写到配置文件中,再写个工具类获取.看项目需求了.
+
+public enum ErrorCode {
+    OK(0,"OK"),ID_INVALID(1,"ID is invalid"),OTHER_ERR(2,"未知错误");
+
+    private int code;
+    private String message;
+
+    ErrorCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+}
+
+2.定义出现异常将返回的实体代理
+也就是封装异常信息到这个类中,再转换为json串返回,如果自己直接构造字串也是可以代替的
+
+@XmlRootElement//标识该资源可以被jersey转为json或者xml
+public class ErrorEntity {
+    private int resp_code;
+    private String resp_msg;
+
+    public ErrorEntity(int resp_code, String resp_msg) {
+        this.resp_code = resp_code;
+        this.resp_msg = resp_msg;
+    }
+    public ErrorEntity() {
+    }
+
+    public int getResp_code() {
+        return resp_code;
+    }
+
+    public void setResp_code(int resp_code) {
+        this.resp_code = resp_code;
+    }
+
+    public String getResp_msg() {
+        return resp_msg;
+    }
+
+    public void setResp_msg(String resp_msg) {
+        this.resp_msg = resp_msg;
+    }
+}
+
+3.自定义异常
+自定义异常,处理时拦截该指定异常
+
+public class DeviceException extends Exception {
+    private int code;
+    private String message;
+
+    /**
+     * 构造异常类
+     * @param code
+     * @param message
+     */
+    public DeviceException( int code,String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    /**
+     * 根据枚举类构造异常结果
+     * @param errorCode
+     */
+    public DeviceException(ErrorCode errorCode) {
+        this.code = errorCode.getCode();
+        this.message = errorCode.getMessage();
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+}
+
+4.定义jersey异常处理器
+异常处理器要实现ExceptionMapper<Exception>接口,并复写返回方法,另外一定要使用@Provider标识该类为一个jersey的’处理器’,如下:
+
+@Provider
+public class DeviceExceptionMapper implements ExceptionMapper<Exception> {
+
+    @Override
+    public Response toResponse(Exception e) {
+        Response.ResponseBuilder ResponseBuilder = null;
+
+        if (e instanceof DeviceException){
+
+            //截取自定义类型
+            DeviceException exp = (DeviceException) e;
+            ErrorEntity entity = new ErrorEntity(exp.getCode(),exp.getMessage());
+            ResponseBuilder = Response.ok(entity, MediaType.APPLICATION_JSON);
+        }else {
+            ErrorEntity entity = new ErrorEntity(ErrorCode.OTHER_ERR.getCode(),e.getMessage());
+            ResponseBuilder = Response.ok(entity, MediaType.APPLICATION_JSON);
+        }
+        System.out.println("执行自定义异常");
+        return ResponseBuilder.build();
+    }
+}
+
+5.注册该异常
+在RESTApplication中要加载该异常,可以使用package扫包,或者直接注册异常都是可以的.
+
+public class RESTApplication extends ResourceConfig {
+
+    public RESTApplication() {
+
+        //想让jersey托管的部分需要加入扫描,或者使用register指定托管类也可以
+        packages("com.haikong.resources","com.haikong.exception");
+        //加载日志包
+        register(LoggingFilter.class);
+        //加载json转换器
+        register(JacksonJsonProvider.class);
+        System.out.println("加载RESTApplication");
+    }
+}
+
+6.测试
+写一个请求链接,该请求直接抛出其他异常
+
+
+    /**
+     * 测试全局异常托管
+     * @throws DeviceException
+     */
+    @GET
+    @Path("/testexception")
+    public void testException() throws DeviceException {
+        if (true){
+            throw new DeviceException(ErrorCode.OTHER_ERR);
+        }
+    }
+
+这里写图片描述
+
+到此异常处理器完成.
+
+二.过滤器
+过滤器可以修改入站和出站请求和响应包括标题的修改，实体等的请求/响应参数。例如用来操纵请求和响应参数像HTTP头，URI和/或HTTP方法.
+
+服务器过滤主要有
+
+ContainerRequestFilter
+
+ContainerResponseFilter
+
+两个接口,显而易见,一个是过滤请求前,一个是过滤请求后.
+
+1.ContainerResponseFilter
+这个是请求结束后响应回复阶段过滤,很简单,有什么参数直接加个断点就能查看到了,同样要使用注解,让jersey认为该类为其一个处理器.
+
+/**
+ * 对于response的过滤器
+ * 过滤器主要是用来操纵请求和响应参数像HTTP头，URI和/或HTTP方法
+ * @author Niu Li
+ * @date 2016/7/27
+ */
+@Provider
+public class ResponseFilter implements ContainerResponseFilter {
+    @Override
+    public void filter(ContainerRequestContext containerRequestContext,
+                       ContainerResponseContext containerResponseContext) throws IOException {
+        /**
+         * 具体可以获取什么参数,加个断点就可以看到了
+         */
+        System.out.println("执行回复过滤");
+    }
+}
+
+2.ContainerRequestFilter
+对于这个注解有@PreMatching和@Provider,经测试,前者只要收到请求就开始执行,后者是收到请求,匹配到相应的处理方法后执行,也就是前者匹配前,后者匹配后执行.
+并且我测试的两个一起用的话,只执行前者,这个不知道哪里有问题,按照官方文档应该是都可以执行的.不太懂了
+
+/**
+ * 对于request的过滤器
+ * 过滤器主要是用来操纵请求和响应参数像HTTP头，URI和/或HTTP方法
+ * @author Niu Li
+ * @date 2016/7/27
+ * Provider //这个是匹配后增加参数或者减少参数
+ */
+@PreMatching  //不知道为什么和后请求过滤器冲突,不能同时使用
+public class PreRequestFilter implements ContainerRequestFilter {
+    @Override
+    public void filter(ContainerRequestContext containerRequestContext) throws IOException {
+        /**
+         * 具体可以获取什么参数,加个断点就可以看到了
+         */
+        System.out.println("PreRequestFilter");
+    }
+}
+
+3.启用
+启用同样需要注册RESTApplication,并且@PreMatching这个注解扫包注入并没什么用,只能手动注册该类.原因未知.
+
+public class RESTApplication extends ResourceConfig {
+
+    public RESTApplication() {
+
+        //想让jersey托管的部分需要加入扫描,或者使用register指定托管类也可以
+        packages("com.haikong.resources","com.haikong.exception");
+        register(LoggingFilter.class);
+        register(JacksonJsonProvider.class);
+        //注册过滤器,扫包对@PreMatching注解无用,只能手动加入
+        register(PreRequestFilter.class);
+        register(ResponseFilter.class);
+        /**
+         * 对于链接,先执行请求过滤,有异常则执行异常过滤,最后执行回复过滤
+         */
+        System.out.println("加载RESTApplication");
+    }
+}
+
+测试结果和下一个的拦截器一起测试.
+
+三.拦截器
+拦截器意图操纵的实体，通过操纵实体的输入/输出数据流。比如你需要编码的客户端请求的实体主体，
+jersey提供如下拦截器:`
+
+ReaderInterceptor
+WriterInterceptor
+
+reader用的不多,writer可以用来开启gzip压缩,这个倒是很实用,并且jersey开启gzip压缩很方便,乱码问题解决办法就是主动告诉浏览器使用哪一种编码解码就好了
+
+public class GzipInterceptor implements WriterInterceptor {
+    @Override
+    public void aroundWriteTo(WriterInterceptorContext context)
+            throws IOException, WebApplicationException {
+
+        MultivaluedMap<String, Object> headers = context.getHeaders();
+        headers.add("Content-Encoding", "gzip");
+        String ContentType = context.getMediaType().toString();
+        headers.add("Content-Type",ContentType+";charset=utf-8");//解决乱码问题
+        final OutputStream outputStream = context.getOutputStream();
+        context.setOutputStream(new GZIPOutputStream(outputStream));
+        context.proceed();
+        System.out.println("GZIP拦截器压缩");
+    }
+}
+
+同样需要注册该类
+
+        //注册拦截器
+        register(GzipInterceptor.class);
+1
+2
+四.执行顺序
+还是之前那个抛出异常的方法,访问后先执行请求过滤器,再匹配到相应方法,执行方法体,然后有异常,执行异常拦截器,其次执行回复过滤,最后是GZIP压缩,如下图:

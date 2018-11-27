@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+
+    <bean id="methodInterceptorImpl" class="cn.model.maven.interceptor.MethodInterceptorImpl"/>
+
+    <bean id="interceptor" class="org.springframework.aop.support.NameMatchMethodPointcutAdvisor">
+        <property name="advice" >
+            <ref local="methodInterceptorImpl"/>
+        </property>
+        <property name="mappedName" value = "springaop*"/>
+    </bean>
+
+    <!--<bean id="interceptorTest" class="cn.model.maven.test.InterceptorTest"/>-->
+
+<!--    <bean id="service" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="interceptorNames" value = "interceptor"/>
+        <property name="target">
+            <ref local="interceptorTest"/>
+        </property>
+    </bean>-->
+
+</beans>

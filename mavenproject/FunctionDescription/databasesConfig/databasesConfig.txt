@@ -1,0 +1,41 @@
+context.xml:
+    <Valve className="org.apache.catalina.valves.CometConnectionManagerValve" />
+
+            <Resource
+                  auth="Container"
+                  type="javax.sql.DataSource"
+                  url="jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=XX.XX.XX.XX)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=tkorasol)))"
+                  driverClassName="oracle.jdbc.driver.OracleDriver"
+                  username="tkpay"
+                  password="ins185"
+                  initialSize="2"
+                  maxActive="50"
+                  maxIdle="2"
+                  maxWait="10000"
+                  minIdle="2"
+                  removeAbandoned="true"
+                  removeAbandonedTimeout="5"
+                  testOnBorrow="true"
+                  testWhileIdle="true"
+                  testOnReturn="true"
+                  logAbandoned="true"
+                  validationQuery="select 1 from dual"
+                  name="jdbc/TkPayDB"
+                  poolPreparedStatements="true"
+                  maxOpenPreparedStatements="50"
+                  minEvictableIdleTimeMillis="1800000"
+                  timeBetweenEvictionRunsMillis="900000"
+        />
+
+        <Resource
+                auth="Container"
+                driverClassName="oracle.jdbc.driver.OracleDriver"
+                maxActive="50"
+                maxIdle="1"
+                maxWait="10000"
+                name="jdbc/InsureDB"
+                password="ins185"
+                type="javax.sql.DataSource"
+                url="jdbc:oracle:thin:@XX.XX.XX.XX:1521:tkorasol"
+                username="tkinsure"
+        />

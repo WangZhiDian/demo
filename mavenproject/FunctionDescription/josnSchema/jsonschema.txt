@@ -1,0 +1,536 @@
+1. JSON Schema关键字简介
+上篇文章中，我们通过一个简单的JSON Schema的例子，简要地介绍了JSON Schema中经常用到的关键字，并介绍了一些在线辅助工具。一般来说，掌握了这些知识点就可以应对比较常见的需求场景了，但是，如果你需要更多的定制化要求以及更加深入的细节校验的话，那么，我们就需要进一步了解更多关键字的用法和使用场景。
+
+2. JSON Schema关键字详解
+例一：涉及的关键字（$schema、title、description、type、properties、required）
+
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "TestInfo",
+    "description": "some information about test",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "Name of the test",
+            "type": "string"
+        }
+    },
+    "required": [
+        "name"
+    ]
+}
+2.1 $schema
+该关键字用于指定JSON Schema版本信息，例一中指定的版本为：draft-04。该关键字是可以省略的，当前最新版本为draft-06。注意：该关键字的值必须使用官方提供的值，不能自己随便写。
+
+2.2 title和description
+这两个关键字都是用来描述对应的JSON元素的，唯一的区别在于，title相对来说，更加简洁，而description更加倾向于详细描述相关信息。当然了，这两个关键字都是可以省略的。我们看到例一中最外层的title和description是对待校验JSON对象的描述，而其中，name元素之下的description其实是对待校验JSON对象的一级key（name）的描述，当然，你也可以对name增加title信息。
+
+2.3 type
+该关键字用于限定待校验JSON元素所属的数据类型，例一中最外层的type关键字值为object，即表示待校验JSON数据为一个JSON对象，而name下的type关键字值为string，即表示待校验JSON对象中的一级key（name）的数据类型为string。那么，按照这个要求，下面这个JSON数据是符合要求的。
+
+{
+    "name": "hello first blog"
+}
+
+而，下面这个JSON数据是不符合要求的，因为name的类型为integer或者number，而不是string。
+
+{
+    "name": 520
+}
+2.3.1 type常见取值
+那么，type又有哪些取值呢？当type取值为string类型的时候，是否还可以添加其他一些附加限制条件呢？我们接下来会按照type的不同取值一点点分析涉及到的关键字含义及用法。首先，我们来看一下，type常见的取值。具体如下：
+
+type取值	对应的Java数据类型
+object	java.lang.Object
+array	java.util.List
+integer	int（java.lang.Integer）
+number	float（java.lang.Float）或int
+null	null
+boolean	java.lang.Boolean
+string	java.lang.String
+在上表中，我们采用了和Java数据类型对比分析的形式给出了type的常见取值，接下来，我们会分析当type为不同取值时，可能涉及的关键字含义和用法。
+
+2.3.2 从type的不同取值说起
+（1）当type取值为object时，涉及的关键字：properties、required、minProperties、maxProperties、propertyNames、dependencies、patternProperties、additionalProperties
+
+properties
+该关键字的值是一个对象。
+
+用于指定JSON对象中的各种不同key应该满足的校验逻辑，如果待校验JSON对象中所有值都能够通过该关键字值中定义的对应key的校验逻辑，每个key对应的值，都是一个JSON Schema，则待校验JSON对象通过校验。从这里，我们可以看到，只要待校验JSON对象的所有key分别都通过对应的JSON Schema的校验检测，这个对象才算是通过校验。
+
+另外，需要注意的是，省略该关键字和该关键字的值为空对象，具有相同效果。例如：
+
+"properties": {
+        "id": {
+            "description": "The unique identifier for a book",
+            "type": "integer",
+            "minimum": 1
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true
+        }
+    }
+
+required
+该关键字的值是一个数组，而数组中的元素必须是字符串，而且必须是唯一的。
+
+该关键字限制了JSON对象中必须包含哪些一级key。如果一个JSON对象中含有required关键字所指定的所有一级key，则该JSON对象能够通过校验。
+
+另外，需要注意的是，省略该关键字和该关键字的值为空数组，具有相同效果。例如：
+
+"required": [
+        "id",
+        "name",
+        "price"
+    ]
+
+minProperties、maxProperties
+这两个关键字的值都是非负整数。
+
+指定了待校验JSON对象中一级key的个数限制，minProperties指定了待校验JSON对象可以接受的最少一级key的个数，而maxProperties指定了待校验JSON对象可以接受的最多一级key的个数。
+
+另外，需要注意的是，省略minProperties关键字和该关键字的值为0，具有相同效果。而，如果省略maxProperties关键字则表示对一级key的最大个数没有限制。例如，如果限制一个JSON对象的一级key的最大个数为5，最小个数为1，则JSON Schema如下：
+
+"minProperties": 1,
+"maxProperties": 5
+
+propertyNames
+注意：该关键字，官方说明中支持，但是，有可能你使用的平台或者第三方工具不支持哦。所以，使用需谨慎。
+
+该关键字的值是一个有效的JSON Schema。
+
+如果待校验JSON对象中的每个一级key都能通过该关键字指定的JSON Schema的校验，那么才认为待校验的JSON对象通过校验。注意，待校验JSON对象的一级key都是string类型。
+
+另外，需要注意的是，省略该关键字和该关键字的值为空JSON Schema，具有相同效果。
+
+patternProperties
+该关键字的值是一个JSON对象，该JSON对象的每一个一级key都是一个正则表达式，value都是一个JSON Schema。
+
+只有待校验JSON对象中的一级key，通过与之匹配的patternProperties中的一级正则表达式，对应的JSON Schema的校验，才算通过校验。例如，如果patternProperties对应的值如下：
+
+"patternProperties": {
+        "^a": {
+            "type": "number"
+        },
+        "^b": {
+            "type": "string"
+        }
+}
+上面的JSON Schema表示，待校验JSON对象中，所有以a开头的一级key的value都必须是number，所有以b开头的一级key的value都必须是string。
+
+additionalProperties
+该关键字的值是一个JSON Schema。
+
+如果待校验JSON对象中存在，既没有在properties中被定义，又没有在patternProperties中被定义，那么这些一级key必须通过additionalProperties的校验。
+
+dependencies
+待定。。。
+
+完整示例：
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "The unique identifier for a book",
+            "type": "integer",
+            "minimum": 1
+        },
+        "price": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true
+        }
+    },
+    "patternProperties": {
+        "^a": {
+            "type": "number"
+        },
+        "^b": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": {
+        "type": "number"
+    },
+    "minProperties": 1,
+    "maxProperties": 5,
+    "required": [
+        "id",
+        "name",
+        "price"
+    ]
+}
+（2）当type取值为array时，涉及的关键字：items、additionalItems、minItems、maxItems、uniqueItems、contains
+
+items
+该关键字的值是一个有效的JSON Schema或者一组有效的JSON Schema。
+
+当该关键字的值是一个有效的JSON Schema时，只有待校验JSON数组中的所有元素均通过校验，整个数组才算通过校验。例如，如果items关键字的具体定义如下：
+
+{
+   "type": "array",
+   "items": {
+     "type": "string",
+     "minLength": 5
+   }
+}
+上面的JSON Schema的意思是，待校验JSON数组的元素都是string类型，且最小可接受长度是5。那么下面这个JSON数组明显是符合要求的，具体内容如下：
+
+["myhome", "green"]
+1
+那么下面这个JSON数据则是不符合要求，因为第一个元素的长度小于5，具体内容如下：
+
+["home", "green"]
+1
+当该关键字的值是一组有效的JSON Schema时，只有待校验JSON数组的所有元素通过items的值中对应位置上的JSON Schema的校验，那么，整个待校验JSON数组才算通过校验。
+
+这里需要注意的是，如果items定义的有效的JSON Schema的数量和待校验JSON数组中元素的数量不一致，那么就要采用“取小原则”。即，如果items定义了3个JSON Schema，但是待校验JSON数组只有2个元素，这时，只要待校验JSON数组的前两个元素能够分别通过items中的前两个JSON Schema的校验，那么，我们认为待校验JSON数组通过了校验。而，如果待校验JSON数组有4个元素，这时，只要待校验JSON数组的前三个元素能够通过items中对应的JSON Schema的校验，我们就认为待校验JSON数组通过了校验。
+
+例如，如果items的值如下：
+
+{
+    "type": "array",
+    "items": [
+        {
+            "type": "string",
+            "minLength": 5
+        },
+        {
+            "type": "number",
+            "minimum": 10
+        },
+        {
+            "type": "string"
+        }
+    ]
+}
+上面的JSON Schema指出了待校验JSON数组应该满足的条件，数组的第一个元素是string类型，且最小可接受长度为5，数组的第二个元素是number类型，最小可接受的值为10，数组的第三个元素是string类型。那么下面这两个JSON数组明显是符合要求的，具体内容如下：
+
+["green", 10, "good"]
+1
+["helloworld", 11]
+1
+下面这两个JSON数组却是不符合要求的，具体内容如下：
+
+["green", 9, "good"]
+1
+["good", 12]
+1
+additionalItems
+该关键字的值是一个有效的JSON Schema。
+
+需要注意的是，该关键字只有在items关键字的值为一组有效的JSON Schema的时候，才可以使用，用于规定超出items中JSON Schema总数量之外的待校验JSON数组中的剩余的元素应该满足的校验逻辑。当然了，只有这些剩余的所有元素都满足additionalItems的要求时，待校验JSON数组才算通过校验。
+
+其实，你可以这么理解，当items的值为一组有效的JOSN Schema的时候，一般可以和additionalItems关键字组合使用，items用于规定对应位置上应该满足的校验逻辑，而additionalItems用于规定超出items校验范围的所有剩余元素应该满足的条件。如果二者同时存在，那么只有待校验JSON数组同时通过二者的校验，才算真正地通过校验。
+
+另外，需要注意的是，如果items只是一个有效的JSON Schema，那么就不能使用additionalItems，原因也很简单，因为items为一个有效的JSON Schema的时候，其规定了待校验JSON数组所有元素应该满足的校验逻辑。additionalItems已经没有用武之地了。
+
+最后，同样强调一下，省略该关键字和该关键字的值为空JSON Schema，具有相同效果。
+
+如果一个additionalItems的值如下：
+
+{
+    "type": "array",
+    "items": [
+        {
+            "type": "string",
+            "minLength": 5
+        },
+        {
+            "type": "number",
+            "minimum": 10
+        }
+    ],
+    "additionalItems": {
+        "type": "string",
+        "minLength": 2
+    }
+}
+
+上面的JSON Schema的意思是，待校验JSON数组第一个元素是string类型，且可接受的最短长度为5个字符，第二个元素是number类型，且可接受的最小值为10，剩余的其他元素是string类型，且可接受的最短长度为2。那么，下面三个JSON数组是能够通过校验的，具体内容如下：
+
+["green", 10, "good"]
+1
+["green", 11]
+1
+["green", 10, "good", "ok"]
+1
+下面JSON数组是无法通过校验的，具体内容如下：
+
+["green", 10, "a"]
+1
+["green", 10, "ok", 2]
+1
+minItems、maxItems
+这两个关键字的值都是非负整数。
+
+指定了待校验JSON数组中元素的个数限制，minItems指定了待校验JSON数组可以接受的最少元素个数，而maxItems指定了待校验JSON数组可以接受的最多元素个数。
+
+另外，需要注意的是，省略minItems关键字和该关键字的值为0，具有相同效果。而，如果省略maxItems关键字则表示对元素的最大个数没有限制。例如，如果限制一个JSON数组的元素的最大个数为5，最小个数为1，则JSON Schema如下：
+
+"minItems": 1,
+"maxItems": 5
+
+uniqueItems
+该关键字的值是一个布尔值，即boolean（true、false）。
+
+当该关键字的值为true时，只有待校验JSON数组中的所有元素都具有唯一性时，才能通过校验。当该关键字的值为false时，任何待校验JSON数组都能通过校验。
+
+另外，需要注意的是，省略该关键字和该关键字的值为false时，具有相同的效果。例如：
+
+"uniqueItems": true
+1
+contains
+注意：该关键字，官方说明中支持，但是，有可能你使用的平台或者第三方工具不支持哦。所以，使用需谨慎。
+
+该关键字的值是一个有效的JSON Schema。
+
+只有待校验JSON数组中至少有一个元素能够通过该关键字指定的JSON Schema的校验，整个数组才算通过校验。
+
+另外，需要注意的是，省略该关键字和该关键字的值为空JSON Schema具有相同效果。
+
+完整示例：
+{
+    "type": "array",
+    "items": [
+        {
+            "type": "string",
+            "minLength": 5
+        },
+        {
+            "type": "number",
+            "minimum": 10
+        }
+    ],
+    "additionalItems": {
+        "type": "string",
+        "minLength": 2
+    },
+    "minItems": 1,
+    "maxItems": 5,
+    "uniqueItems": true
+}
+（3）当type取值为integer或number时，涉及的关键字：multipleOf、maximum、exclusiveMaximum、minimum、exclusiveMinimum
+
+我们首先来回顾一下integer和number的区别，integer相当于Java中的int类型，而number相当于Java中的int或float类型。
+
+multipleOf
+该关键字的值是一个大于0的number，即可以是大于0的int，也可以是大于0的float。
+
+只有待校验的值能够被该关键字的值整除，才算通过校验。
+
+如果含有该关键字的JSON Schema如下：
+
+{
+    "type": "integer",
+    "multipleOf": 2
+}
+那么，2、4、6都是可以通过校验的，但是，3、5、7都是无法通过校验的，当然了，2.0、4.0也是无法通过校验的，但是，并不是因为multipleOf关键字，而是因为type关键字。
+
+如果含有multipleOf关键字的JSON Schema如下：
+
+{
+    "type": "number",
+    "multipleOf": 2.0
+}
+
+那么，2、2.0、4、4.0都是可以通过校验的，但是，3、3.0、3、3.0都是无法通过校验的。
+
+另外，需要注意的是，省略该关键字则不对待校验数值进行该项校验。
+
+maximum
+该关键字的值是一个number，即可以是int，也可以是float。
+
+该关键字规定了待校验元素可以通过校验的最大值。
+
+省略该关键字，即表示对待校验元素的最大值没有要求。
+
+exclusiveMaximum
+该关键字的值是一个boolean。
+
+该关键字通常和maximum一起使用，当该关键字的值为true时，表示待校验元素必须小于maximum指定的值；当该关键字的值为false时，表示待校验元素可以小于或者等于maximum指定的值。
+
+需要注意的是，省略该关键字和该关键字的值为false，具有相同效果。例如：
+
+{
+    "type": "number",
+    "maximum": 12.3,
+    "exclusiveMaximum": true
+}
+
+minimum、exclusiveMinimum
+minimum、exclusiveMinimum关键字的用法和含义与maximum、exclusiveMaximum相似。唯一的区别在于，一个约束了待校验元素的最小值，一个约束了待校验元素的最大值。这里就不展开解释了。
+
+完整示例：
+{
+    "type": "number",
+    "multipleOf": 0.5,
+    "maximum": 12.5,
+    "exclusiveMaximum": true,
+    "minimum": 2.5,
+    "exclusiveMinimum": true
+}
+
+（4）当type取值为string时，涉及的关键字：maxLength、minLength、pattern、format
+
+maxLength
+该关键字的值是一个非负整数。
+
+该关键字规定了待校验JSON元素可以通过校验的最大长度，即待校验JSON元素的最大长度必须小于或者等于该关键字的值。
+
+另外，需要注意的是，如果省略该关键字则表示对待校验元素的最大长度没有限制。
+
+minLength
+该关键字的值是一个非负整数。
+
+该关键字规定了待校验JSON元素可以通过校验的最小长度，即待校验JSON元素的最小长度必须大于或者等于该关键字的值。
+
+另外，需要注意的是，如果省略该关键字和该关键字的值为0，具有相同效果。
+
+pattern
+该关键字的值是一个正则表达式。
+
+只有待校验JSON元素符合该关键字指定的正则表达式，才算通过校验。
+
+format
+该关键字的值只能是以下取值：
+
+date-time（时间格式）、email（邮件格式）、hostname（网站地址格式）、ipv4、ipv6、uri、uri-reference、uri-template、json-pointer。
+
+如果待校验的JSON元素正好是一个邮箱地址，那么，我们就可以使用format关键字进行校验，而不必通过pattern关键字指定复杂的正则表达式进行校验。例如：
+
+{
+    "type": "string",
+    "format": "email"
+}
+1
+2
+3
+4
+完整示例：
+{
+    "type": "string",
+    "pattern": "^#([0-9a-fA-F]{6}$",
+    "maxLength": 6,
+    "minLength": 6
+}
+
+（5）全类型可用，即不局限于某个type，涉及的关键字：enum、const、allOf、anyOf、oneOf、not、default
+
+enum
+该关键字的值是一个数组，该数组至少要有一个元素，且数组内的每一个元素都是唯一的。
+
+如果待校验的JSON元素和数组中的某一个元素相同，则通过校验。否则，无法通过校验。
+
+注意，该数组中的元素值可以是任何值，包括null。省略该关键字则表示无须对待校验元素进行该项校验。例如：
+
+{
+    "type": "number",
+    "enum": [2, 3, null, "hello"]
+}
+
+const
+该关键字的值可以是任何值，包括null。
+
+如果待校验的JSON元素的值和该关键字指定的值相同，则通过校验。否则，无法通过校验。
+
+省略该关键字则表示无须对待校验元素进行该项校验。
+
+注意，该关键字部分第三方工具，并不支持。
+
+allOf
+该关键字的值是一个非空数组，数组里面的每个元素都必须是一个有效的JSON Schema。
+
+只有待校验JSON元素通过数组中所有的JSON Schema校验，才算真正通过校验。
+
+anyOf
+该关键字的值是一个非空数组，数组里面的每个元素都必须是一个有效的JSON Schema。
+
+如果待校验JSON元素能够通过数组中的任何一个JSON Schema校验，就算通过校验。
+
+oneOf
+该关键字的值是一个非空数组，数组里面的每个元素都必须是一个有效的JSON Schema。
+
+如果待校验JSON元素能且只能通过数组中的某一个JSON Schema校验，才算真正通过校验。不能通过任何一个校验和能通过两个及以上的校验，都不算真正通过校验。
+
+not
+该关键字的值是一个JSON Schema。
+
+只有待校验JSON元素不能通过该关键字指定的JSON Schema校验的时候，待校验元素才算通过校验。
+
+default
+该关键字的值是没有任何要求的。
+
+该关键字常常用来指定待校验JSON元素的默认值，当然，这个默认值最好是符合要求的，即能够通过相应的JSON Schema的校验。
+
+另外，需要注意的是，该关键字除了提示作用外，并不会产生任何实质性的影响。
+
+（6）再说type关键字
+
+需要特别注意的是，type关键字的值可以是一个string，也可以是一个数组。
+
+如果type的值是一个string，则其值只能是以下几种：null、boolean、object、array、number、string、integer。
+
+如果type的值是一个数组，则数组中的元素都必须是string，且其取值依旧被限定为以上几种。只要带校验JSON元素是其中的一种，则通过校验。
+
+3. JSON Schema比较复杂的示例：
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "book info",
+    "description": "some information about book",
+    "type": "object",
+    "properties": {
+        "id": {
+            "description": "The unique identifier for a book",
+            "type": "integer",
+            "minimum": 1
+        },
+        "name": {
+            "type": "string",
+            "pattern": "^#([0-9a-fA-F]{6}$",
+            "maxLength": 6,
+            "minLength": 6
+        },
+        "price": {
+            "type": "number",
+            "multipleOf": 0.5,
+            "maximum": 12.5,
+            "exclusiveMaximum": true,
+            "minimum": 2.5,
+            "exclusiveMinimum": true
+        },
+        "tags": {
+            "type": "array",
+            "items": [
+                {
+                    "type": "string",
+                    "minLength": 5
+                },
+                {
+                    "type": "number",
+                    "minimum": 10
+                }
+            ],
+            "additionalItems": {
+                "type": "string",
+                "minLength": 2
+            },
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true
+        }
+    },
+    "minProperties": 1,
+    "maxProperties": 5,
+    "required": [
+        "id",
+        "name",
+        "price"
+    ]
+}
+
+注意，以上JSON Schema只是为了展示部分关键字的用法，可能和实际应用略有不同。
+
+官方的参考文档如下：http://json-schema.org/latest/json-schema-validation.html

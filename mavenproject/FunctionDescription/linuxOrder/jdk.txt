@@ -1,0 +1,48 @@
+jdk安装：
+1 java -version 查看java 的版本
+2 rpm -qa|grep jdk  查看rpm安装的jdk的目录
+3 rpm -qa|grep gci  linux自带jdk的版本的目录
+4 卸载： yum -y remove XXX  XXX为上午2.3 出来的目录
+
+5 去官网下载jdk的安装包 XXX.tar.gz
+6 用xshell或者ftp上传该tar包到linux虚拟机服务器某一个目录
+7 将该包解压： tar -xzvf XXX.tar.gz
+8 拷贝解压后的文件到： /usr/jdk 下
+9 修改配置文件： /etc/profile
+10 重启配置文件： source /etc/profile  重启后jdk生效
+11 验证新装的jdk： java -version
+
+注意：如果linux虚拟机上自带的gcj没有卸载，用java -version 验证的时候，出来的版本不是你刚才
+自己安装的版本，这时候要把cgi卸载，然后重新启动/etc/profile
+
+上述如果删除不行，可以有下面的删除方式：
+2.然后卸载：
+
+ yum -y remove java-1.4.2-gcj-compat-1.4.2.0-40jpp.115
+
+如果这中方法不行，可以使用如下的方法卸载：
+
+
+
+1）卸载系统自带的jdk版本：
+   查看自带的jdk：
+   #rpm -qa|grep gcj
+   可能看到如下类似的信息：
+   libgcj-4.1.2-44.el5
+   java-1.4.2-gcj-compat-1.4.2.0-40jpp.115
+   使用rpm -e --nodeps 命令删除上面查找的内容：
+   #rpm -e –nodeps java-1.4.2-gcj-compat-1.4.2.0-40jpp.115
+
+2）卸载rpm安装的jkd版本
+   查看安装的jdk：
+   #rpm -qa|grep jdk
+   可能看到如下类似的信息：
+   jdk-1.6.0_22-fcs
+   卸载：
+   #rpm -e --nodeps jdk-1.6.0_22-fcs
+
+
+
+3）找到jdk安装目录的_uninst子目录
+
+·在shell终端执行命令./uninstall.sh即可卸载jdk

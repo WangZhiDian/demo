@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="aa" />
+        <module name="model_api" />
+        <module name="model_common" />
+        <module name="model_dao" />
+        <module name="model_domain" />
+        <module name="model_junit" />
+        <module name="model_service" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="aa" target="1.8" />
+      <module name="mavenproject" target="1.5" />
+      <module name="model_admin" target="1.8" />
+      <module name="model_api" target="1.8" />
+      <module name="model_common" target="1.8" />
+      <module name="model_dao" target="1.8" />
+      <module name="model_domain" target="1.8" />
+      <module name="model_junit" target="1.8" />
+      <module name="model_service" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

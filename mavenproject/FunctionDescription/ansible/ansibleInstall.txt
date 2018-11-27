@@ -1,0 +1,72 @@
+1 Ansible是属于Extra Packages for Enterprise Linux (EPEL)库的一部分，因此要先安装EPEL
+2 [root@arthur ~]# yum install epel-release
+  [root@arthur ~]# yum repolist
+  [root@arthur ~]# yum install ansible
+： https://blog.csdn.net/downing114/article/details/52220496
+
+3 安装的时候，yum源可能有问题，所以我选择更换yum源
+3.1 vi  /etc/resolv.conf
+    nameserver 114.114.114.114
+    nameserver 8.8.8.8
+3.2 备份原来而yum配置： cd /etc/yum.repos.d/
+     mv CentOS-Base.repo CentOS-Base.repo_bak
+3.3 获取aliyun的yum源：
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+yum clean all   ：该命令将linux中缓存的资源包清理掉
+yum makecache   ：重新下载安装资源包，已提高安装时候的速度
+3.4 安装epel源，这个epel相当于是yum源之外的另外一个资源下载源
+： https://jingyan.baidu.com/article/215817f7aef2e01eda1423f4.html
+
+4 安装epel的时候，即makecache的时候，可能会报错：该错误也会引起 yum install ansible 的时候报错
+YUM：[Errno 14] problem making ssl connection
+http://download.fedoraproject.org/pub/epel/6/i386/repodata/repomd.xml: [Errno 14] problem making ssl
+解决办法：
+4.1 对于该问题，需要首先禁用出问题的YUM源（enabled=0），然后安装ca-certificates包： yum install ca-certificates
+禁用epel下载标示： cat /etc/yum.repos.d/epel.repo
+将文件的 enabled=0 该属性设置成0
+4.2  yum install ca-certificates  安装
+4.3 将epel.repo的配置修改为1 ： cat /etc/yum.repos.d/epel.repo
+enabled=0 该属性设置成1
+4.4 安装ansible： yum install ansible
+即使这样配置，epel的makecache的时候，仍然会报错，但ansible可以正常安装上，原理还不是还清楚，需要进一步了解
+： https://blog.csdn.net/allen_a/article/details/78589858
+
+5 ssh免秘钥登录设置（自在控制端使用）
+5.1 [root@Monitor ansible]# ssh-keygen -t rsa -P ''     #####生成公钥/私钥
+5.2 ########在ansible服务器上执行以下语句
+    [root@Monitor ansible]# scp /root/.ssh/id_rsa_web.pub root@192.168.180.5:/root/.ssh/
+5.3 ######在客户端上执行以下语句
+    [root@GJB-TESTING .ssh]# cat /root/.ssh/id_rsa_web.pub >> /root/.ssh/authorized_keys
+    [root@GJB-TESTING .ssh]# chmod 600 /root/.ssh/authorized_keys
+    [root@GJB-TESTING .ssh]# ll /root/.ssh/authorized_keys
+备注：如果出现报错的话按一下步骤来进行排查：1，先检查下selinux是否关闭 ,2，authorized_keys权限是否为600。3，python版本是否一致。
+： http://blog.51cto.com/liqingbiao/1875921
+
+6 修改ansible.cfg的配置：
+[root@Monitor ansible]# vim ansible.cfg
+remote_port    = 22               ####用于连接远程ssh的端口
+private_key_file = /root/.ssh/id_rsa_web    ####用于免密码登陆的
+
+7 定义主机组：
+[root@Monitor ansible]# vim hosts
+[web]
+192.168.180.4
+192.168.180.5
+[db]
+192.168.180.2
+
+8 打开系统selinux服务：
+修改/etc/selinux/config 文件
+将SELINUX=enforcing改为SELINUX=disabled
+重启机器即可
+
+9 测试：
+[root@Monitor ansible]# ansible web -m command -a 'uptime'
+
+以上步骤为安装ansible和测试的步奏
+
+yum -y install 包名（支持*） ：自动选择y，全自动
+yum install 包名（支持*） ：手动选择y or n
+yum remove 包名（不支持*）
+rpm -ivh 包名（支持*）：安装rpm包
+rpm -e 包名（不支持*）：卸载rpm包

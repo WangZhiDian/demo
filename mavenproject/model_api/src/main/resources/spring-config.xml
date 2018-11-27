@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+
+    <!-- 使用spring注入注解标识 -->
+    <aop:aspectj-autoproxy/>
+    <!-- 识别注解的包路径 -->
+    <context:component-scan base-package="cn.model"/>
+
+
+    <!-- 引入属性文件 -->
+    <bean id="propertyPlaceholderConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath:application.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 引入属性文件 -->
+<!--    <bean id="configurationProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        &lt;!&ndash; 这里是PropertiesFactoryBean类，它也有个locations属性，也是接收一个数组  &ndash;&gt;
+        <property name="locations">
+            <list>
+                <value>classpath:exceptionCode.properties</value>
+                <value>classpath:application.properties</value>
+            </list>
+        </property>
+    </bean>-->
+<!--    <bean id="propertyConfigurer" class="cn.tk.hera.pay.commons.utils.PropertyConfigurer">
+        <property name="properties" ref="configurationProperties"/>
+    </bean>-->
+
+<!--    <bean id="payExecutorPool" class="cn.tk.hera.pay.commons.batch.AsyncPayExecutorPool" scope="singleton" init-method="start" >
+        <property name="bufferSize" value="${payExecutorPool.bufferSize}"/>
+        <property name="paralleSize" value="${payExecutorPool.paralleSize}"/>
+    </bean>-->
+
+<!--
+        <bean id="unionBatchPayServiceImpl" class="cn.tk.hera.pay.channel.impl.union.UnionBatchPayServiceImpl" scope="singleton" />
+        <bean id="unionpayFixed" class="cn.tk.hera.pay.channel.impl.union.UnionPayFixedDelay" scope="singleton"/>
+    -->
+
+    <bean id="initMethodInit" class="cn.model.maven.init.initMethodInit.InitMethodInit" init-method="init" />
+
+    <!-- 引入其他spring的xml配置文件，问了将xml的职责分得更清楚，该方式可以在web.xml配置中时，用通配符*引入代替 -->
+    <import resource="spring-config/spring-config-datasource.xml"/>
+    <!--<import resource="spring-config/spring-config-task.xml"/>-->
+    <!--<import resource="spring-config/spring-config-interceptor.xml"/>-->
+</beans>

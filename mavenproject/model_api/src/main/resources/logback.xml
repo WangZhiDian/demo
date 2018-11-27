@@ -1,0 +1,214 @@
+<!-- Logback为取代log4j而生。 Logback由log4j的创立者Ceki Gülcü设计。以十多年设计工业级记录系统的经验为基础，所创建的logback比现有任何记录系统更快、占用资源更少，有时差距非常大 
+	需要添加的 JAR 包:
+	logback-core.jar – logback 核心包，必备
+	slf4j-api.jar 	 – 通用日志接口包，可以在logback与其他记录系统如log4j和java.util.logging (JUL)之间轻松互相切换
+	Logback-classic  – 实现了 SLF4J API，扩展了core模块
+	1. 系统启动，默认加在classpath下的logback.xml或者 logback-test.xml。 这里可以把默认配置文件的位置作为系统属性进行指定 java -Dlogback.configurationFile=/path/to/config.xml
+	chapters.configuration.MyApp1
+	2. 在根元素configuration中配置属性scan=”true”后，当配置文件修改后自动重新加载，默认每分钟扫描一次。
+	configuration元素的 scanPeriod 属性控制扫描周期，其值可以带时间单位，包括：milliseconds、seconds、minutes和hours。 
+	如果没写明时间单位，则默认为毫秒。示例：
+
+	FileAppender：把日志添加到文件，有以下子节点：
+		<file>：被写入的文件名，可以是相对目录，也可以是绝对目录，如果上级目录不存在会自动创建，没有默认值。
+		<append>：如果是 true，日志被追加到文件结尾，如果是 false，清空现存文件，默认是true。
+		<encoder>：对记录事件进行格式化。（具体参数稍后讲解 ）
+
+	RollingFileAppender：滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。有以下子节点：
+		<file>：被写入的文件名，可以是相对目录，也可以是绝对目录，如果上级目录不存在会自动创建，没有默认值。
+		<append>：如果是 true，日志被追加到文件结尾，如果是 false，清空现存文件，默认是true。
+		<rollingPolicy>:当发生滚动时，决定RollingFileAppender的行为，涉及文件移动和重命名。属性class定义具体的滚动策略类　　　　　
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"： 最常用的滚动策略，它根据时间来制定滚动策略，既负责滚动也负责出发滚动。有以下子节点：
+				<fileNamePattern>：必要节点，包含文件名及“%d”转换符，“%d”可以包含一个java.text.SimpleDateFormat指定的时间格式，如：%d{yyyy-MM}。
+				如果直接使用 %d，默认格式是 yyyy-MM-dd。RollingFileAppender的file字节点可有可无，通过设置file，可以为活动文件和归档文件指定不同位置，当前日志总是记录到file指定的文件（活动文件），活动文件的名字不会改变；
+				如果没设置file，活动文件的名字会根据fileNamePattern 的值，每隔一段时间改变一次。“/”或者“\”会被当做目录分隔符。
+				<maxHistory>:可选节点，控制保留的归档文件的最大数量，超出数量就删除旧文件。假设设置每个月滚动，且<maxHistory>是6，则只保存最近6个月的文件，删除之前的旧文件。注意，删除旧文件是，那些为了归档而创建的目录也会被删除。　　　　　
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy"： 查看当前活动文件的大小，如果超过指定大小会告知RollingFileAppender 触发当前活动文件滚动。只有一个节点:
+				<maxFileSize>:这是活动文件的大小，默认值是10MB。
+			<prudent>：当为true时，不支持FixedWindowRollingPolicy。支持TimeBasedRollingPolicy，但是有两个限制，1不支持也不允许文件压缩，2不能设置file属性，必须留空。
+		<triggeringPolicy >: 告知 RollingFileAppender 合适激活滚动。　　　　　
+			class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy" 根据固定窗口算法重命名文件的滚动策略。有以下子节点：
+				<minIndex>:窗口索引最小值
+				<maxIndex>:窗口索引最大值，当用户指定的窗口过大时，会自动将窗口设置为12。
+				<fileNamePattern>:必须包含“%i”例如，假设最小值和最大值分别为1和2，命名模式为 mylog%i.log,会产生归档文件mylog1.log和mylog2.log。还可以指定文件压缩选项，例如，mylog%i.log.gz 或者 没有log%i.log.zip
+
+	子节点<loger>：用来设置某一个包或具体的某一个类的日志打印级别、以及指定<appender>。<loger>仅有一个name属性，一个可选的level和一个可选的addtivity属性。 可以包含零个或多个<appender-ref>元素，标识这个appender将会添加到这个loger
+		name: 用来指定受此loger约束的某一个包或者具体的某一个类。
+		level: 用来设置打印级别，大小写无关：TRACE, DEBUG, INFO, WARN, ERROR, ALL和OFF，还有一个特俗值INHERITED或者同义词NULL，代表强制执行上级的级别。 如果未设置此属性，那么当前loger将会继承上级的级别。
+
+	注意：1 当root节点中没有子节点appender-ref的时候，catalina中将不会打印日志，当关联一个子节点后，会将子节点打印在控制台catalina.out
+		  2 对于配置的logger，如下wechat，当root未配置，不会输出到catalina.out中，但会输出道对应的切割日志文件中，若root配置了，则会一起输出到catalina.out中
+		  3 在web.xml中，无论是否引用logbackConfigLocation参数，logback配置都会生效
+		  4 下列的file-info，file-debug，file-error 分别按照打印的级别滚动到对应的日志里面，路径为LOG_HOME路径
+	-->
+<configuration scan="false" scanPeriod="10 seconds" debug="false">
+	<!-- 为提高性能，不会在每个logger被调用时去检查是否需要扫描，而是每隔16次记录操作进行一次检查。 简言之，当配置文件改变后，它会被延时重新加载，延时时间由扫描间隔时间和一些logger调用所决定 
+		debug:当此属性设置为true时，将打印出logback内部日志信息，实时查看logback运行状态。默认值为false。 -->
+	<!-- 尽量别用绝对路径，如果带参数不同容器路径解释可能不同 -->
+	<!-- 用来定义变量值,类似于局部变量，它有两个属性name和value，通过<property>定义的值会被插入到logger上下文中，可以使“${}”来使用变量。  -->
+	<!--<property name="LOG_HOME" value="/home/tomcat/logs"/>-->
+	<property name="LOG_HOME" value="${log.path}" />
+	<property name="AppName" value="${app.name}"/>
+
+	<!-- 子节点<appender>：负责写日志的组件，它有两个必要属性name和class。name指定appender名称，class指定appender的全限定名 -->
+	<appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+		<append>true</append>
+		<encoder>
+			<pattern>%d{H:mm} %-5level [%logger{16}] %msg%n</pattern>
+		</encoder>
+	</appender>
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%X{requestId} %X{remoteAddr} %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{16}] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!--时间滚动输出 level为 INFO 日志-->
+	<appender name="file-info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_HOME}/${AppName}-info.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/${AppName}-info.%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+			<MaxHistory>10</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>32MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%X{requestId} %X{remoteAddr} %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{16}] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 时间滚动输出 level为 DEBUG 日志 -->
+	<appender name="file-debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>DEBUG</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_HOME}/${AppName}-debug.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/${AppName}-debug.%d{yyyy-MM-dd}.log</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>32MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%X{requestId} %X{remoteAddr} %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{16}] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!--时间滚动输出 level为 ERROR日志-->
+	<appender name="file-error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_HOME}/${AppName}-error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/${AppName}-error.%d{yyyy-MM-dd}.log</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>32MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%X{requestId} %X{remoteAddr} %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{16}] %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- restful日志 -->
+	<appender name="restful" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<Encoding>UTF-8</Encoding>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- 日志文件输出的文件名 -->
+			<FileNamePattern>${LOG_HOME}/restful/restful_%d{yyyy-MM-dd}.log</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n   </pattern>
+		</layout>
+	</appender>
+	
+	<appender name="mybatis" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<Encoding>UTF-8</Encoding>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/mybatis/mybatisError%d{yyyy-MM-dd}.log
+			</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} -
+				%msg%n   </pattern>
+		</layout>
+	</appender>
+
+	<!--微信接口报文日志，按照日志生成时间，保存30天，文件大小32M切割切割，日志路径在log_home的wechat下面-->
+	<appender name="wechat" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_HOME}/wechat/${AppName}_wechat.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/wechat/${AppName}_wechat.%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>32MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!--mylogger，按照日志生成时间，保存30天，文件大小32M切割切割，日志路径在log_home的wechat下面-->
+	<appender name="mylogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<file>${LOG_HOME}/mylogger/${AppName}_mylogger.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/mylogger/${AppName}mylogger.%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>32MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 用来设置某一个包或者具体的某一个类的日志打印级别，包名要与实际项目一致 -->
+	<!-- 主要是为了过滤无关jar包的输出 -->
+	<root level="DEBUG">
+		<appender-ref ref="Console"/>
+		<appender-ref ref="mylogger"/>
+	</root>
+	<!-- mybatis的日志，只需要记录错误日志 -->
+	<logger name="org.apache.ibatis" level="INFO">
+		<appender-ref ref="mybatis" />
+	</logger>
+	<logger name="wechat" level="DEBUG">
+		<appender-ref ref="wechat"/>
+	</logger>
+	<logger name="mylogger" level="DEBUG">
+		<appender-ref ref="mylogger"/>
+	</logger>
+
+</configuration>

@@ -1,0 +1,548 @@
+6 Disruptor并发框架简介
+Martin Fowler在自己网站上写了一篇LMAX架构的文章，在文章中他介绍了LMAX是一种新型零售金融交易平台，它能够以很低的延迟产生大量交易。这个系统是建立在JVM平台上，其核心是一个业务逻辑处理器，它能够在一个线程里每秒处理6百万订单。业务逻辑处理器完全是运行在内存中，使用事件源驱动方式。业务逻辑处理器的核心是Disruptor。
+
+Disruptor它是一个开源的并发框架，并获得2011 Duke’s 程序框架创新奖，能够在无锁的情况下实现网络的Queue并发操作。
+
+Disruptor是一个高性能的异步处理框架，或者可以认为是最快的消息框架（轻量的JMS），也可以认为是一个观察者模式的实现，或者事件监听模式的实现。
+
+目前我们使用disruptor已经更新到了3.x版本，比之前的2.x版本性能更加的优秀，提供更多的API使用方式。
+
+下载disruptor-3.3.2.jar引入我们的项目既可以开始disruptor之旅。
+
+在使用之前，首先说明disruptor主要功能加以说明，你可以理解为他是一种高效的”生产者-消费者”模型。也就性能远远高于传统的BlockingQueue容器。
+
+官方学习网站：http://ifeve.com/disruptor-getting-started/
+
+（1）使用Disruptor
+第一：建立一个Event类，用来承载数据，因为Disruptor是一个事件驱动的，所以再Disruptor中是以事件绑定数据进行传递的
+第二：建立一个工厂Event类，用于创建Event类实例对象
+第三：需要有一个监听事件类，用于处理数据（Event类）
+第四：我们需要进行测试代码编写。实例化Disruptor实例，配置一系列参数。然后我们对Disruptor实例绑定监听事件类，接受并处理数据。
+第五：在Disruptor中，真正存储数据的核心叫做RingBuffer，我们通过Disruptor实例拿到它，然后把数据生产出来，把数据加入到RingBuffer的实例对象中即可。
+
+实例化一个Disruptor对象：
+//创建Disruptor
+//1 eventFactory 为
+//2 ringBufferSize为RingBuffer缓冲区大小，最好是2的指数倍
+//3 线程池，进行Disruptor内部的数据接收处理调用
+//4 第四个参数ProducerType.SINGLE和ProducerType.MULTI，用来指定数据生成者有一个还是多个
+//5 第五个参数是一种策略：WaitStrategy
+/**
+ * 创建Disruptor
+ * @param eventFactory 工厂类对象，用于创建一个个的LongEvent， LongEvent是实际的消费数据，初始化启动Disruptor的时候，Disruptor会调用该工厂方法创建一个个的消费数据实例存放到RingBuffer缓冲区里面去，创建的对象个数为ringBufferSize指定的
+ * @param ringBufferSize RingBuffer缓冲区大小
+ * @param executor 线程池，Disruptor内部的对数据进行接收处理时调用
+ * @param producerType 用来指定数据生成者有一个还是多个，有两个可选值ProducerType.SINGLE和ProducerType.MULTI
+ * @param waitStrategy 一种策略，用来均衡数据生产者和消费者之间的处理效率，默认提供了3个实现类
+ */
+com.lmax.disruptor.dsl.Disruptor.Disruptor<V>(EventFactory<V> eventFactory, int ringBufferSize, Executor executor, ProducerType producerType, WaitStrategy waitStrategy)
+
+//BlockingWaitStrategy 是最低效的策略，但其对CPU的消耗最小并且在各种不同部署环境中能提供更加一致的性能表现
+WaitStrategy BLOCKING_WAIT = new BlockingWaitStrategy();
+
+//SleepingWaitStrategy 的性能表现跟BlockingWaitStrategy差不多，对CPU的消耗也类似，但其对生产者线程的影响最小，适合用于异步日志类似的场景
+WaitStrategy SLEEPING_WAIT = new SleepingWaitStrategy();
+
+//YieldingWaitStrategy是可以被用在低延迟系统中的两个策略之一，这种策略在减低系统延迟的同时也会增加CPU运算量。YieldingWaitStrategy策略会循环等待sequence增加到合适的值。循环中调用Thread.yield()允许其他准备好的线程执行。如果需要高性能而且事件消费者线程比逻辑内核少的时候，推荐使用YieldingWaitStrategy策略。例如：在开启超线程的时候。
+WaitStrategy YIELDING_WAIT = new YieldingWaitStrategy();
+
+//BusySpinWaitStrategy是性能最高的等待策略，同时也是对部署环境要求最高的策略。这个性能最好用在事件处理线程比物理内核数目还要小的时候。例如：在禁用超线程技术的时候。
+WaitStrategy BusySpin_WAIT = new BusySpinWaitStrategy();
+
+//连接消费事件方法，其中EventHandler的是为消费者消费消息的实现类
+disruptor.handleEventsWith(？ extends EventHandler<V>);
+
+//通过实例化的Disruptor对象获取到RingBuffer缓冲区，然后往缓冲区里面添加数据并且发布，消费者就可以消费这个数据了
+RingBuffer<V> ringBuffer = disruptor.getRingBuffer();//获取数据缓冲区
+
+long sequence = ringBuffer.next();//从数据缓冲区中获取下一个可用事件槽的Id
+
+V event = ringBuffer.get(sequence); //从事件槽中获取一个数据对象（初始化的时候，槽就会生成对应的对象V放到RingBuffer里面，就是eventFactory返回的对象）
+
+event.setValue(bbf.getLong(0));//调用Event的方法，设置数据，注意Event完全由用户实现
+
+ringBuffer.publish(sequence);//发布事件，发布的是RingBuffer的事件槽的Id，消费者也是根据这个Id去RingBuffer中获取对应的事件数据的，另外ringBuffer.publish 方法必须包含在 finally 中以确保必须得到调用；如果某个请求的 sequence 未被提交，将会堵塞后续的发布操作或者其它的 producer。
+
+（2）Disruptor术语
+RingBuffer：被看做Disruptor最主要的组件，然而从3.0开始RingBuffer仅仅负责存储和更新再Disruptor中流通的数据。对一些特殊的使用场景能够被用户（使用其他数据结构）完全替代。
+
+Sequence：Disruptor使用Sequence来表示一个特殊组件处理的序号。和Disruptor一样，每一个消费者（EventProcessor）都维持着一个Sequence。大部分的并发代码依赖这些Sequence值得运转，因此Sequence支持多种当前为AtomicLong类的特性。
+
+Sequencer：这是Disruptor真正的核心。实现了这个接口的两种生产者（单生产者和多生产者）均实现了所有的并发算法，为了在生产者和消费者之间进行准确快速的数据传递。
+
+SequenceBarrier：由Sequencer生成，并且包含了已经发布的Sequence的引用，这些Sequence源于Sequencer和一些独立的消费者的Sequence。它包含了决定是否有供消费者消费的Event的逻辑。用来权衡当消费者无法从RingBuffer里面获取事件时的处理策略。（例如：当生产者太慢，消费者太快，会导致消费者获取不到新的事件会根据该策略进行处理，默认会堵塞）
+
+WaitStrategy：决定一个消费者将如何等待生产者将Event置入Disruptor的策略。用来权衡当生产者无法将新的事件放进RingBuffer时的处理策略。（例如：当生产者太快，消费者太慢，会导致生成者获取不到新的事件槽来插入新事件，则会根据该策略进行处理，默认会堵塞）
+
+Event：从生产者到消费者过程中所处理的数据单元。Disruptor中没有代码表示Event，因为它完全是由用户定义的。
+
+EventProcessor：主要事件循环，处理Disruptor中的Event，并且拥有消费者的Sequence。它有一个实现类是BatchEventProcessor，包含了event loop有效的实现，并且将回调到一个EventHandler接口的实现对象。
+
+EventHandler：由用户实现并且代表了Disruptor中的一个消费者的接口。
+
+Producer：由用户实现，它调用RingBuffer来插入事件(Event)，在Disruptor中没有相应的实现代码，由用户实现。
+
+WorkProcessor：确保每个sequence只被一个processor消费，在同一个WorkPool中的处理多个WorkProcessor不会消费同样的sequence。
+
+WorkerPool：一个WorkProcessor池，其中WorkProcessor将消费Sequence，所以任务可以在实现WorkHandler接口的worker之间移交
+
+LifecycleAware：当BatchEventProcessor启动和停止时，于实现这个接口用于接收通知。
+
+（3）理解RingBuffer
+ringbuffer到底是什么？
+
+答：嗯，正如名字所说的一样，它是一个环（首尾相接的环），你可以把它用做在不同上下文（线程）间传递数据的buffer。
+
+基本来说，ringbuffer拥有一个序号，这个序号指向数组中下一个可用元素。
+
+Disruptor说的是生产者和消费者的故事. 有一个数组.生产者往里面扔芝麻.消费者从里面捡芝麻. 但是扔芝麻和捡芝麻也要考虑速度的问题. 1 消费者捡的比扔的快 那么消费者要停下来.生产者扔了新的芝麻,然后消费者继续. 2 数组的长度是有限的,生产者到末尾的时候会再从数组的开始位置继续.这个时候可能会追上消费者,消费者还没从那个地方捡走芝麻,这个时候生产者要等待消费者捡走芝麻,然后继续.
+
+随着你不停地填充这个buffer（可能也会有相应的读取），这个序号会一直增长，直到绕过这个环。
+
+要找到数组中当前序号指向的元素，可以通过mod操作：Sequence mod Array.length = index in Array（取模操作）假如当前的Sequence为12，RingBuffer的长度为10，那么下一个事件槽的ID就为（java的mod语法）：12 % 10 = 2。很简单吧。由于是取模操作，所以如果槽的个数是2的N次方那么将更有利于基于二进制的计算机进行计算。
+
+（4）RingBuffer的特点
+如果你看了维基百科里面的关于环形buffer的词条，你就会发现，我们的实现方式，与其最大的区别在于：没有尾指针。我们只维护了一个指向下一个可用位置的序号。这种实现是经过深思熟虑的—我们选择用环形buffer的最初原因就是想要提供可靠的消息传递。
+我们实现的ring buffer和大家常用的队列之间的区别是，我们不删除buffer中的数据，也就是说这些数据一直存放在buffer中，直到新的数据覆盖他们。这就是和维基百科版本相比，我们不需要尾指针的原因。ringbuffer本身并不控制是否需要重叠。
+因为它是数组，所以要比链表快，而且有一个容易预测的访问模式。
+这是对CPU缓存友好的，也就是说在硬件级别，数组中的元素是会被预加载的，因此在ringbuffer当中，cpu无需时不时去主存加载数组中的下一个元素。
+其次，你可以为数组预先分配内存，使得数组对象一直存在（除非程序终止）。这就意味着不需要花大量的时间用于垃圾回收。此外，不像链表那样，需要为每一个添加到其上面的对象创造节点对象—对应的，当删除节点时，需要执行相应的内存清理操作。
+（5）Disruptor应用
+Disruptor实际上是对RingBuffer的封装，所以我们也可以直接使用RingBuffer类
+
+API提供的生产者接口 EventTranslator<V>与EventTranslatorOneArg<V v, Object data>，前者不能动态传参，后者可以动态传递一个参数data，V为需要创建的数据对象，data为实际数据，实现translateTo(V v, long sequeue, Object data)方法，其中v就是下一个可用事件槽里面的对象，data为传进来的真实数据，调用ringBuffer.publishEvent(EventTranslatorOneArg translator, Object data);来发布数据到RingBuffer中
+
+import java.nio.ByteBuffer;
+
+import com.lmax.disruptor.EventTranslatorOneArg;
+import com.lmax.disruptor.RingBuffer;
+
+/**
+ * Disruptor 3.0提供了lambda式的API。这样可以把一些复杂的操作放在Ring Buffer，
+ * 所以在Disruptor3.0以后的版本最好使用Event Publisher或者Event Translator来发布事件
+ */
+public class LongEventProducerWithTranslator {
+
+    //一个translator可以看做一个事件初始化器，publicEvent方法会调用它
+    //填充Event
+    private static final EventTranslatorOneArg<LongEvent, ByteBuffer> TRANSLATOR = new EventTranslatorOneArg<LongEvent, ByteBuffer>() {
+                @Override
+                public void translateTo(LongEvent event, long sequeue, ByteBuffer buffer) {
+                    event.setValue(buffer.getLong(0));
+                }
+    };
+
+    private final RingBuffer<LongEvent> ringBuffer;
+
+    public LongEventProducerWithTranslator(RingBuffer<LongEvent> ringBuffer) {
+        this.ringBuffer = ringBuffer;
+    }
+
+    public void onData(ByteBuffer buffer){
+        ringBuffer.publishEvent(TRANSLATOR, buffer);
+    }
+
+}
+
+API提供的消费者接口
+
+WorkerPool ： WorkerPool<Order>(RingBuffer<V> ringBuffer, SequenceBarrier sequenceBarrier, ExceptionHandler<? super V> exceptionHandler, WorkHandler<? super V>... workHandlers)其中RingBuffer为数据缓冲区，sequenceBarrier是消费者与生产者之间的协调策略，API默认提供了一个实现类ProcessingSequenceBarrier，可以通过RingBuffer.newBarrier(Sequence... sequencesToTrack);来获取，exceptionHandler为异常处理函数，当handler发生异常时回调该函数，workHandlers为实现了EventHandler接口的消息业务处理类，可以有多个。
+WorkerPool启动的方法是 WorkerPool.start(Executor executor)
+
+BatchEventProcessor ： BatchEventProcessor<V>(RingBuffer extends DataProvider, SequenceBarrier sequenceBarrier, EventHandler<? super V> eventHandler) 其中RingBuffer为数据缓冲区，sequenceBarrier是消费者与生产者之间的协调策略，API默认提供了一个实现类ProcessingSequenceBarrier，可以通过RingBuffer.newBarrier(Sequence... sequencesToTrack);来获取，eventHandler为实现了EventHandler接口的消息业务处理类。
+BatchEventProcessor启动的方法是 Executor.submit(BatchEventProcessor batchEventProcessor)
+
+**注意**SequenceBarrier是用来协调消费者和生成者之间效率的策略类，所以要想Barrier生效，必须要将消费者消费的Seuence传递给RingBuffer，然后由RingBuffer进行协调：ringBuffer.addGatingSequences(BatchEventProcessor.getSequence()); 多消费者时使用BatchEventProcessor.getWorkerSequences()（这两个方法WorkerPool同样适用）。这是在直接使用RingBuffer时需要进行的处理，如果通过Disruptor去进行调用，在调用handleEventsWith注册消费者方法时会自动添加该处理。
+
+-Trade.java
+
+    import java.util.concurrent.atomic.AtomicInteger;
+
+    public class Trade {
+
+        private String id;//ID
+        private String name;
+        private double price;//金额
+        private AtomicInteger count = new AtomicInteger(0);
+
+        public String getId() {
+            return id;
+        }
+        public void setId(String id) {
+            this.id = id;
+        }
+        public String getName() {
+            return name;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public double getPrice() {
+            return price;
+        }
+        public void setPrice(double price) {
+            this.price = price;
+        }
+        public AtomicInteger getCount() {
+            return count;
+        }
+        public void setCount(AtomicInteger count) {
+            this.count = count;
+        }
+
+
+    }
+
+TradeHandler.java
+
+import java.util.UUID;
+
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.WorkHandler;
+
+/**
+ * 实现EventHandler是为了作为BatchEventProcessor的事件处理器，
+ * 实现WorkHandler是为了作为WorkerPool的事件处理器
+ * @author jliu10
+ *
+ */
+public class TradeHandler implements EventHandler<Trade>, WorkHandler<Trade> {
+
+    @Override
+    public void onEvent(Trade event, long sequence, boolean endOfBatch) throws Exception {
+        this.onEvent(event);
+    }
+
+    @Override
+    public void onEvent(Trade event) throws Exception {
+        //这里做具体的消费逻辑
+        event.setId(UUID.randomUUID().toString());//简单生成下ID
+        System.out.println(event.getId());
+    }
+}
+
+Main1.java
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import com.lmax.disruptor.BatchEventProcessor;
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.YieldingWaitStrategy;
+
+public class Main1 {
+
+    public static void main(String[] args) throws Exception {
+        int BUFFER_SIZE=1024;
+        int THREAD_NUMBERS=4;
+        /*
+         * createSingleProducer创建一个单生产者的RingBuffer，
+         * 第一个参数叫EventFactory，从名字上理解就是"事件工厂"，其实它的职责就是产生数据填充RingBuffer的区块。
+         * 第二个参数是RingBuffer的大小，它必须是2的指数倍 目的是为了将求模运算转为&运算提高效率
+         * 第三个参数是RingBuffer的生产都在没有可用区块的时候(可能是消费者（或者说是事件处理器） 太慢了)的等待策略
+         */
+        final RingBuffer<Trade> ringBuffer = RingBuffer.createSingleProducer(new EventFactory<Trade>() {
+            @Override
+            public Trade newInstance() {
+                return new Trade();
+            }
+        }, BUFFER_SIZE, new YieldingWaitStrategy());
+
+        //创建线程池
+        ExecutorService executors = Executors.newFixedThreadPool(THREAD_NUMBERS);
+
+        //创建SequenceBarrier 用来权衡消费者是否可以从ringbuffer里面获取事件
+        SequenceBarrier sequenceBarrier = ringBuffer.newBarrier();
+
+        //创建消息处理器
+        BatchEventProcessor<Trade> transProcessor = new BatchEventProcessor<Trade>(
+                ringBuffer, sequenceBarrier, new TradeHandler());
+
+        //这一步的目的就是把消费者的位置信息引用注入到生产者    如果只有一个消费者的情况可以省略
+        ringBuffer.addGatingSequences(transProcessor.getSequence());
+
+        //把消息处理器提交到线程池
+        executors.submit(transProcessor);
+
+        //如果存在多个消费者 那重复执行上面3行代码 把TradeHandler换成其它消费者类
+
+        Future<?> future= executors.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                long seq;
+                for(int i=0;i<10;i++){
+                    seq = ringBuffer.next();//占个坑 --ringBuffer一个可用区块
+                    ringBuffer.get(seq).setPrice(Math.random()*9999);//给这个区块放入 数据
+                    ringBuffer.publish(seq);//发布这个区块的数据使handler(consumer)可见
+                }
+                return null;
+            }
+        });
+
+        future.get();//等待生产者结束
+        Thread.sleep(1000);//等上1秒，等消费都处理完成
+        transProcessor.halt();//通知事件(或者说消息)处理器 可以结束了（并不是马上结束!!!）
+        executors.shutdown();//终止线程
+    }
+}
+
+Main2.java
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.IgnoreExceptionHandler;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.WorkHandler;
+import com.lmax.disruptor.WorkerPool;
+
+public class Main2 {
+    public static void main(String[] args) throws InterruptedException {
+        int BUFFER_SIZE=1024;
+        int THREAD_NUMBERS=4;
+
+        EventFactory<Trade> eventFactory = new EventFactory<Trade>() {
+            public Trade newInstance() {
+                return new Trade();
+            }
+        };
+
+        RingBuffer<Trade> ringBuffer = RingBuffer.createSingleProducer(eventFactory, BUFFER_SIZE);
+
+        SequenceBarrier sequenceBarrier = ringBuffer.newBarrier();
+
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_NUMBERS);
+
+        WorkHandler<Trade> handler = new TradeHandler();
+
+        WorkerPool<Trade> workerPool = new WorkerPool<Trade>(ringBuffer, sequenceBarrier, new IgnoreExceptionHandler(), handler);
+
+        //这一步的目的就是把消费者的位置信息引用注入到生产者    如果只有一个消费者的情况可以省略
+        ringBuffer.addGatingSequences(workerPool.getWorkerSequences());
+
+        workerPool.start(executor);
+
+        //下面这个生产8个数据
+        for(int i=0;i<8;i++){
+            long seq=ringBuffer.next();
+            ringBuffer.get(seq).setPrice(Math.random()*9999);
+            ringBuffer.publish(seq);
+        }
+
+        Thread.sleep(1000);
+        workerPool.halt();
+        executor.shutdown();
+    }
+}
+
+Disruptor注册消费者的方法是：Disruptor.handleEventsWith(final EventHandler<? super T>... handlers)
+
+Disruptor提供了一些复杂的并行运行方式。
+
+1、生产者A生成的数据同时被B,C两个消费者消费，两者都消费完成之后再由消费者D对两者同时消费。（注意ABC以及下面提到的消息处理类必须要实现EventHandler接口）
+
+EventHandlerGroup<Trade> handlerGroup =
+        disruptor.handleEventsWith(A, B);
+//声明在C1,C2完事之后执行JMS消息发送操作 也就是流程走到C3
+handlerGroup.then(C);
+
+2、生产者A生成的数据同时被B1,C2两个消费者消费，而B消耗完毕之后由B2处理，C1处理完成之后由C2处理，B2与C2两者都消费完成之后再由消费者D对两者同时消费。其中B1与B2,C1与C2是并行执行的。
+
+disruptor.handleEventsWith(B1, C1);
+disruptor.after(B1).handleEventsWith(B2);
+disruptor.after(C1).handleEventsWith(C2);
+disruptor.after(B2, C2).handleEventsWith(h3);
+
+3、生产者A生成的数据依次被A,B,C三个消费者消费
+
+disruptor.handleEventsWith(A).handleEventsWith(B).handleEventsWith(C);
+1
+2
+参考博客 http://ifeve.com/disruptor-dsl/，该博客中介绍的是Disruptor2.0的版本，在3.0中有一些方法的作用有变化，请参考http://ifeve.com/disruptor-wizard/
+
+Main.java
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.EventHandlerGroup;
+import com.lmax.disruptor.dsl.ProducerType;
+import com.test.sync13.generate1.Trade;
+
+public class Main {
+    public static void main(String[] args) throws InterruptedException {
+
+        long beginTime=System.currentTimeMillis();
+        int bufferSize=8;
+        ExecutorService executor=Executors.newFixedThreadPool(8);
+
+        Disruptor<Trade> disruptor = new Disruptor<Trade>(new EventFactory<Trade>() {
+            @Override
+            public Trade newInstance() {
+                return new Trade();
+            }
+        }, bufferSize, executor, ProducerType.SINGLE, new BusySpinWaitStrategy());
+
+        //菱形操作
+        /**
+        //使用disruptor创建消费者组C1,C2
+        EventHandlerGroup<Trade> handlerGroup =
+                disruptor.handleEventsWith(new Handler1(), new Handler2());
+        //声明在C1,C2完事之后执行JMS消息发送操作 也就是流程走到C3
+        handlerGroup.then(new Handler3());
+        */
+
+        //顺序操作
+        /** */
+        disruptor.handleEventsWith(new Handler1()).
+            handleEventsWith(new Handler2()).
+            handleEventsWith(new Handler3());
+
+
+        //六边形操作.
+        /**
+        Handler1 h1 = new Handler1();
+        Handler2 h2 = new Handler2();
+        Handler3 h3 = new Handler3();
+        Handler4 h4 = new Handler4();
+        Handler5 h5 = new Handler5();
+        disruptor.handleEventsWith(h1, h2);
+        disruptor.after(h1).handleEventsWith(h4);
+        disruptor.after(h2).handleEventsWith(h5);
+        disruptor.after(h4, h5).handleEventsWith(h3);
+       */
+
+
+
+        disruptor.start();//启动
+        CountDownLatch latch=new CountDownLatch(1);
+        //生产者准备
+        executor.submit(new TradePublisher(latch, disruptor));
+
+        latch.await();//等待生产者完事.
+
+        disruptor.shutdown();
+        executor.shutdown();
+        System.out.println("总耗时:"+(System.currentTimeMillis()-beginTime));
+    }
+}
+
+Handler*.java
+
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.WorkHandler;
+import com.test.sync13.generate1.Trade;
+
+public class Handler1 implements EventHandler<Trade>,WorkHandler<Trade> {
+
+    @Override
+    public void onEvent(Trade event, long sequence, boolean endOfBatch) throws Exception {
+        this.onEvent(event);
+    }
+
+    @Override
+    public void onEvent(Trade event) throws Exception {
+        System.out.println("handler1: set name");
+        event.setName("h1");
+        Thread.sleep(500);
+    }
+}
+
+TradePublisher.java
+
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+
+import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.dsl.Disruptor;
+import com.test.sync13.generate1.Trade;
+
+public class TradePublisher implements Runnable {
+
+    Disruptor<Trade> disruptor;
+    private CountDownLatch latch;
+
+    private static int LOOP=10;//模拟百万次交易的发生
+
+    public TradePublisher(CountDownLatch latch,Disruptor<Trade> disruptor) {
+        this.disruptor=disruptor;
+        this.latch=latch;
+    }
+
+    @Override
+    public void run() {
+        TradeEventTranslator tradeTransloator = new TradeEventTranslator();
+        for(int i=0;i<LOOP;i++){
+            disruptor.publishEvent(tradeTransloator);
+        }
+        //采用CountDownLatch来保证10个线程能够同时启动
+        latch.countDown();
+    }
+
+}
+
+class TradeEventTranslator implements EventTranslator<Trade>{
+
+    private Random random=new Random();
+
+    @Override
+    public void translateTo(Trade event, long sequence) {
+        this.generateTrade(event);
+    }
+
+    private Trade generateTrade(Trade trade){
+        trade.setPrice(random.nextDouble()*9999);
+        return trade;
+    }
+
+}
+Trade.java
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Trade {
+
+    private String id;//ID
+    private String name;
+    private double price;//金额
+    private AtomicInteger count = new AtomicInteger(0);
+
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public double getPrice() {
+        return price;
+    }
+    public void setPrice(double price) {
+        this.price = price;
+    }
+    public AtomicInteger getCount() {
+        return count;
+    }
+    public void setCount(AtomicInteger count) {
+        this.count = count;
+    }
+
+
+}
+
+版权声明：本文为博主原创文章，未经博主允许不得转载。	https://blog.csdn.net/a314368439/article/details/72642653

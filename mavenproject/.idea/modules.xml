@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/mavenproject.iml" filepath="$PROJECT_DIR$/mavenproject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_api/model_api.iml" filepath="$PROJECT_DIR$/model_api/model_api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_common/model_common.iml" filepath="$PROJECT_DIR$/model_common/model_common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_dao/model_dao.iml" filepath="$PROJECT_DIR$/model_dao/model_dao.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_domain/model_domain.iml" filepath="$PROJECT_DIR$/model_domain/model_domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_junit/model_junit.iml" filepath="$PROJECT_DIR$/model_junit/model_junit.iml" />
+      <module fileurl="file://$PROJECT_DIR$/model_service/model_service.iml" filepath="$PROJECT_DIR$/model_service/model_service.iml" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+
+    <!-- task1 -->
+    <bean name = "job1" class="cn.model.maven.service.squart.simpleTask.Job1Demo" />
+    <bean id = "jobDetail_1" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean" >
+        <property name = "targetObject">
+            <ref bean = "job1"/>
+        </property>
+        <property name="targetMethod">
+            <value>sayHello</value>
+        </property>
+    </bean>
+    <bean id="cronTrigger1" class = "org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <ref bean="jobDetail_1"/>
+        </property>
+        <property name="cronExpression">
+            <value>0/2 * * * * ?</value>
+        </property>
+    </bean>
+
+    <!-- task2 -->
+    <bean name = "job2" class="cn.model.maven.service.squart.simpleTask.Job2Demo" />
+    <bean id = "jobDetail_2" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean" >
+        <property name = "targetObject">
+            <ref bean = "job2"/>
+        </property>
+        <property name="targetMethod">
+            <value>sayHello</value>
+        </property>
+    </bean>
+    <bean id="cronTrigger2" class = "org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <ref bean="jobDetail_2"/>
+        </property>
+        <property name="cronExpression">
+            <value>0/5 * * * * ?</value>
+        </property>
+    </bean>
+
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean = "cronTrigger1"/>
+                <ref bean = "cronTrigger2"/>
+            </list>
+        </property>
+    </bean>
+</beans>
