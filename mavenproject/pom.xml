@@ -38,7 +38,7 @@
   </properties>
 
   <dependencies>
-    <!-- 该jar包需要在junit之前加载 -->
+    <!-- 该jar包需要在junit之前加载  -->
     <dependency>
       <groupId>org.jmockit</groupId>
       <artifactId>jmockit</artifactId>
